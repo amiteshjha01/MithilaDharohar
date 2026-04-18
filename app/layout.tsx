@@ -1,151 +1,201 @@
+'use client';
+
 import type { Metadata } from 'next';
+import Image from 'next/image';
 import './globals.css';
 import Link from 'next/link';
 import CartBadge from '@/components/CartBadge';
-
-export const metadata: Metadata = {
-  title: 'MithilaDharohar | Authentic Bihar Heritage',
-  description: 'Preserving the soul of Mithila through authentic handmade achars, Madhubani art, and traditional handlooms.',
-  keywords: 'MithilaDharohar, Mithila, Madhubani Art, Homemade Pickles, Bihari Achar, Handloom',
-};
+import WhatsAppSupportButton from '@/components/WhatsAppSupportButton';
+import { Toaster, toast } from 'sonner';
+import { Search, User, Menu, X, Heart, MessageCircle, ChevronRight, ShoppingBag, ShieldCheck, Palette, Sparkles } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  useEffect(() => {
+    document.body.style.overflow = isMenuOpen ? 'hidden' : 'unset';
+  }, [isMenuOpen]);
+
   return (
     <html lang="en" className="scroll-smooth">
-      <body className="antialiased selection:bg-primary/20 selection:text-primary bg-secondary">
-        {/* Minimal Editorial Header */}
-        <header className="header-float">
-          <nav className="container-editorial">
-            <div className="flex justify-between items-center h-24 md:h-32">
-              {/* Navigation (Left) */}
-              <div className="hidden lg:flex items-center space-x-16 flex-1">
-                <Link href="/products" className="group relative py-2">
-                  <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-text-main group-hover:text-primary transition-colors">The Boutique</span>
-                  <span className="absolute bottom-0 left-0 w-0 h-px bg-primary transition-all duration-300 group-hover:w-full"></span>
-                </Link>
-                <Link href="/products?category=food" className="group relative py-2">
-                  <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-text-main group-hover:text-primary transition-colors">Authentic Food</span>
-                  <span className="absolute bottom-0 left-0 w-0 h-px bg-primary transition-all duration-300 group-hover:w-full"></span>
-                </Link>
-              </div>
-
-              {/* Central Identity */}
-              <div className="flex-shrink-0">
-                <Link href="/" className="flex flex-col items-center group">
-                  <span className="text-[28px] md:text-[38px] font-serif font-bold text-primary tracking-[-0.05em] leading-[0.9] transition-all group-hover:tracking-normal">
+      <body className="antialiased selection:bg-primary/10 selection:text-primary bg-secondary min-h-screen flex flex-col font-sans">
+        
+        {/* Professional Header - Sanctuary Standard */}
+        <header className={`fixed top-0 inset-x-0 z-[200] transition-all duration-300 ${scrolled ? 'bg-secondary/95 backdrop-blur-md shadow-sm py-2' : 'bg-transparent py-4'}`}>
+          <nav className="container-sanctuary">
+            <div className="flex items-center justify-between gap-6 h-14 md:h-16">
+              
+              {/* Logo - Heritage Elegance */}
+              <Link href="/" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-2 md:gap-3 group relative z-[210]">
+                <Image src="/logo.png" alt="MithilaDharohar" width={40} height={40} className="w-8 h-8 md:w-10 md:h-10 mix-blend-multiply rounded-md" />
+                <div className="flex flex-col">
+                  <span className="text-xl md:text-2xl font-serif font-bold text-heritage-dark tracking-tight leading-none group-hover:text-primary transition-colors">
                     Mithila
                   </span>
-                  <span className="text-[9px] font-bold tracking-[0.6em] text-text-main group-hover:text-heritage-gold transition-colors uppercase pl-1">
+                  <span className="text-[9px] font-medium tracking-[0.3em] text-primary uppercase mt-0.5">
                     Dharohar
                   </span>
-                </Link>
+                </div>
+              </Link>
+
+              {/* Universal Search - Accessible Amazon Standard */}
+              <div className="hidden lg:flex flex-1 items-center justify-center max-w-xl px-4">
+                <form action="/products" method="GET" className="w-full relative group">
+                  <input
+                    type="text"
+                    name="search"
+                    placeholder="Search for authentic heritage..."
+                    className="w-full h-11 bg-white/80 border border-heritage-dark/10 rounded-lg px-10 text-sm focus:bg-white focus:border-primary focus:ring-2 focus:ring-primary/5 transition-all"
+                  />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-heritage-dark/40" />
+                </form>
               </div>
 
-              {/* Navigation (Right) */}
-              <div className="hidden lg:flex items-center justify-end space-x-12 flex-1">
-                <Link href="/about" className="text-[10px] font-bold text-text-main hover:text-primary transition-all uppercase tracking-[0.3em]">Our Story</Link>
-                <div className="flex items-center space-x-8">
-                   <Link href="/account" className="text-text-main hover:text-primary transition-all" aria-label="Account">
-                     <svg className="w-5 h-5 stroke-[1.2]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                       <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
-                     </svg>
-                   </Link>
-                   <CartBadge />
+              {/* Navigation Links */}
+              <div className="hidden lg:flex items-center gap-8">
+                <nav className="flex items-center gap-6 border-r border-heritage-dark/10 pr-8">
+                  <Link href="/products" className="text-[11px] font-semibold uppercase tracking-widest text-heritage-dark/80 hover:text-primary transition-colors">Collection</Link>
+                  <Link href="/about" className="text-[11px] font-semibold uppercase tracking-widest text-heritage-dark/80 hover:text-primary transition-colors">Our Legacy</Link>
+                </nav>
+                <div className="flex items-center gap-5">
+                  <Link href="/account" className="w-10 h-10 rounded-lg border border-heritage-dark/10 flex items-center justify-center text-heritage-dark hover:border-primary hover:text-primary transition-all">
+                    <User className="w-4 h-4" />
+                  </Link>
+                  <CartBadge />
                 </div>
               </div>
 
-              {/* Mobile Toggle */}
-              <div className="lg:hidden flex items-center gap-6">
-                 <CartBadge />
-                <button className="text-text-main" aria-label="Menu">
-                  <svg className="w-6 h-6 stroke-[1.5]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 9h16.5m-16.5 6.75h16.5" />
-                  </svg>
+              {/* Mobile Actions */}
+              <div className="flex lg:hidden items-center gap-3 relative z-[210]">
+                <CartBadge />
+                <button 
+                  onClick={() => setIsMenuOpen(!isMenuOpen)}
+                  className="w-10 h-10 flex items-center justify-center rounded-lg bg-heritage-dark text-white active:scale-95 transition-all"
+                  aria-label="Toggle Menu"
+                >
+                  {isMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
                 </button>
               </div>
             </div>
           </nav>
+
+          {/* Clean Mobile Sidebar Navigator */}
+          <div className={`fixed inset-0 bg-heritage-bone z-[150] lg:hidden transition-all duration-300 ease-in-out ${isMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+             <div className="flex flex-col h-full pt-28 px-6 space-y-10">
+                <nav className="flex flex-col divide-y divide-heritage-dark/5">
+                  {[
+                    { name: 'Latest Arrivals', href: '/products' },
+                    { name: 'Traditional Achar', href: '/products?category=food' },
+                    { name: 'Heritage Clothing', href: '/products?category=clothing' },
+                    { name: 'Handcrafted Arts', href: '/products?category=craft' }
+                  ].map((item, i) => (
+                    <Link 
+                      key={i} 
+                      href={item.href} 
+                      onClick={() => setIsMenuOpen(false)}
+                      className="flex items-center justify-between py-6 group"
+                    >
+                      <span className="text-2xl font-serif text-heritage-dark group-hover:text-primary transition-colors">{item.name}</span>
+                      <ChevronRight className="w-5 h-5 text-heritage-dark/20" />
+                    </Link>
+                  ))}
+                </nav>
+
+                <div className="mt-auto pb-12 space-y-6">
+                  <Link href="/account" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-4 p-5 bg-white rounded-xl border border-heritage-dark/5">
+                    <User className="w-5 h-5 text-primary" />
+                    <span className="font-semibold text-heritage-dark">Your Account</span>
+                  </Link>
+                  <div className="text-center px-4">
+                    <p className="text-[9px] font-medium text-heritage-dark/40 uppercase tracking-[0.3em]">MithilaDharohar International</p>
+                  </div>
+                </div>
+             </div>
+          </div>
         </header>
 
-        <main>{children}</main>
+        <main className="flex-grow">{children}</main>
 
-        {/* Editorial Journal Footer */}
-        <footer className="bg-heritage-dark text-heritage-bone pt-32 pb-20 overflow-hidden">
-          <div className="container-editorial">
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-y-20 md:gap-x-24 mb-32 items-start">
-              {/* Brand Pillar */}
-              <div className="md:col-span-5">
-                <Link href="/" className="flex flex-col mb-10">
-                  <span className="text-[32px] font-serif font-bold text-heritage-bone leading-none mb-2">Mithila</span>
-                  <span className="text-[10px] font-bold tracking-[0.5em] text-primary uppercase">Legacy & Soul</span>
+        {/* Structured Professional Footer */}
+        <footer className="bg-heritage-dark text-white pt-20 pb-12">
+          <div className="container-sanctuary">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-20">
+              <div className="space-y-6">
+                <Link href="/" className="flex items-center gap-3">
+                  <div className="bg-white/95 p-1 rounded flex items-center justify-center">
+                    <Image src="/logo.png" alt="MithilaDharohar" width={40} height={40} className="w-8 h-8 object-contain mix-blend-multiply" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-2xl font-serif font-bold italic">Mithila</span>
+                    <span className="text-[9px] font-medium tracking-[0.3em] text-primary uppercase">Heritage & Soul</span>
+                  </div>
                 </Link>
-                <p className="text-[15px] text-heritage-bone/50 leading-relaxed mb-12 max-w-sm">
-                  We are a bridge between ancient Bihari wisdom and the modern home. Hand-mixed, sun-dried, and heart-delivered by our community of 500+ women artisans.
+                <p className="text-sm text-white/60 leading-relaxed font-normal">
+                  Real products from Mithila, made by real artisans. Our collection is handcrafted by 100% women-led collectives in Bihar.
                 </p>
-                <div className="flex gap-10">
-                  {['IG', 'FB', 'YT'].map(social => (
-                    <span key={social} className="text-[10px] font-bold tracking-widest text-heritage-bone/40 hover:text-heritage-bone transition-colors cursor-pointer border-b border-white/10 pb-1">{social}</span>
-                  ))}
-                </div>
               </div>
 
-              {/* Navigation Links (Asymmetric) */}
-              <div className="md:col-span-2 md:col-start-7">
-                <h4 className="text-[11px] font-bold text-primary tracking-[0.3em] uppercase mb-10">Boutique</h4>
-                <ul className="space-y-6 text-[12px] text-heritage-bone/60 font-medium uppercase tracking-widest">
-                  <li><Link href="/products?category=food" className="hover:text-heritage-bone transition-colors">Heritage Food</Link></li>
-                  <li><Link href="/products?category=craft" className="hover:text-heritage-bone transition-colors">Ancient Art</Link></li>
-                  <li><Link href="/products?category=clothing" className="hover:text-heritage-bone transition-colors">Textiles</Link></li>
-                  <li><Link href="/products" className="hover:text-heritage-bone transition-colors">Collection</Link></li>
+              <div>
+                <h4 className="text-[10px] font-bold text-primary tracking-widest uppercase mb-6">Explore</h4>
+                <ul className="space-y-4 text-sm text-white/70">
+                  <li><Link href="/products" className="hover:text-primary transition-colors">All Collections</Link></li>
+                  <li><Link href="/about" className="hover:text-primary transition-colors">Our History</Link></li>
+                  <li><Link href="/products?category=food" className="hover:text-primary transition-colors">Traditional Food</Link></li>
+                  <li><Link href="/products?category=clothing" className="hover:text-primary transition-colors">Handmade Clothing</Link></li>
                 </ul>
               </div>
 
-              {/* Concierge */}
-              <div className="md:col-span-2">
-                <h4 className="text-[11px] font-bold text-primary tracking-[0.3em] uppercase mb-10">Concierge</h4>
-                <ul className="space-y-6 text-[12px] text-heritage-bone/60 font-medium uppercase tracking-widest">
-                  <li><Link href="/shipping-policy" className="hover:text-heritage-bone transition-colors">Shipping</Link></li>
-                  <li><Link href="/return-policy" className="hover:text-heritage-bone transition-colors">Returns</Link></li>
-                  <li><Link href="/contact" className="hover:text-heritage-bone transition-colors">Contact</Link></li>
-                  <li><Link href="/about" className="hover:text-heritage-bone transition-colors">Our Legacy</Link></li>
+              <div>
+                <h4 className="text-[10px] font-bold text-primary tracking-widest uppercase mb-6">Concierge</h4>
+                <ul className="space-y-4 text-sm text-white/70">
+                  <li><Link href="/contact" className="hover:text-primary transition-colors">Contact Support</Link></li>
+                  <li><Link href="/shipping-policy" className="hover:text-primary transition-colors">Shipping Info</Link></li>
+                  <li><Link href="/return-policy" className="hover:text-primary transition-colors">Returns Policy</Link></li>
+                  <li><Link href="/about" className="hover:text-primary transition-colors">G.I. Verification</Link></li>
                 </ul>
               </div>
 
-              {/* Journal Subscription */}
-              <div className="md:col-span-3 lg:col-start-10">
-                <h4 className="text-[11px] font-bold text-primary tracking-[0.3em] uppercase mb-10">The Journal</h4>
-                <form className="group">
+              <div className="space-y-6">
+                <h4 className="text-[10px] font-bold text-primary tracking-widest uppercase mb-6">The Journal</h4>
+                <p className="text-xs text-white/40 leading-relaxed">Join our inner circle for seasonal drops and artisan stories.</p>
+                <form className="relative">
                   <input 
                     type="email" 
-                    placeholder="YOUR EMAIL" 
-                    className="bg-transparent border-b border-white/10 text-heritage-bone py-4 w-full text-[11px] font-bold tracking-widest placeholder:text-white/20 focus:border-primary transition-colors outline-none"
+                    placeholder="E-mail Address" 
+                    className="bg-white/5 border border-white/10 text-white p-4 w-full text-xs rounded-lg focus:border-primary outline-none transition-all placeholder:text-white/20"
                   />
-                  <button className="mt-8 text-primary text-[11px] font-bold tracking-[0.3em] uppercase hover:text-heritage-bone transition-colors flex items-center gap-3 group">
-                    Subscribe 
-                    <svg className="w-5 h-5 transition-transform group-hover:translate-x-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+                  <button className="absolute right-3 top-1/2 -translate-y-1/2 text-primary hover:text-white transition-all">
+                    <ChevronRight className="w-5 h-5" />
                   </button>
                 </form>
               </div>
             </div>
 
-            {/* Copyright & Badges */}
-            <div className="pt-16 border-t border-white/5 flex flex-col md:flex-row justify-between items-center text-[9px] text-white/20 uppercase tracking-[0.4em] font-bold gap-10">
-              <p>© 2024 MithilaDharohar Private Ltd.</p>
-              <div className="flex flex-wrap justify-center gap-12 font-medium opacity-60">
-                <span>G.I. Heritage</span>
-                <span>Women Artisan Owned</span>
-                <span>Crafted in Bihar</span>
+            <div className="pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center text-[10px] text-white/30 uppercase tracking-[0.2em] gap-6">
+              <p>© 2024 MithilaDharohar International.</p>
+              <div className="flex flex-wrap justify-center gap-8">
+                <span className="flex items-center gap-2 text-primary/60"><ShieldCheck className="w-3 h-3" /> Certified G.I. Origin</span>
+                <span>Artisan Owned</span>
               </div>
             </div>
           </div>
         </footer>
 
+        <WhatsAppSupportButton />
+        <Toaster position="top-center" />
       </body>
     </html>
   );
 }
-

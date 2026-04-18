@@ -8,7 +8,7 @@ interface StockBadgeProps {
 const StockBadge: React.FC<StockBadgeProps> = ({ quantity, inStock }) => {
   if (!inStock || quantity <= 0) {
     return (
-      <span className="inline-flex items-center px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-red-50 text-red-700 border border-red-100">
+      <span className="inline-flex items-center px-4 py-1.5 rounded-full text-[9px] font-bold uppercase tracking-[0.2em] bg-heritage-red/5 text-heritage-red border border-heritage-red/10">
          Archive / Out of Stock
       </span>
     );
@@ -16,15 +16,15 @@ const StockBadge: React.FC<StockBadgeProps> = ({ quantity, inStock }) => {
 
   if (quantity < 5) {
     return (
-      <span className="inline-flex items-center px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-[#922724] text-white shadow-lg animate-pulse">
-        Rarity: Only {quantity} Handcrafted Pieces Left
+      <span className="inline-flex items-center px-4 py-1.5 rounded-full text-[9px] font-bold uppercase tracking-[0.2em] bg-primary text-white shadow-sm animate-pulse">
+        Rarity: {quantity} Artisanal Pieces Remaining
       </span>
     );
   }
 
   return (
-    <span className="inline-flex items-center px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-[#2d5a27]/10 text-[#2d5a27] border border-[#2d5a27]/20">
-      Available in Heritage
+    <span className="inline-flex items-center px-4 py-1.5 rounded-full text-[9px] font-bold uppercase tracking-[0.2em] bg-heritage-bone text-heritage-dark border border-heritage-dark/10">
+      Sanctuary Guaranteed Stock
     </span>
   );
 };

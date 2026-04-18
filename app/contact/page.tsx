@@ -1,132 +1,103 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
+import { Mail, Phone, MapPin, Clock, MessageCircle, ShieldCheck, HeartHandshake, ChevronRight, ArrowLeft } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'Contact Us | Mithila Heritage',
-  description: 'Get in touch with Mithila Heritage for inquiries and support',
+  title: 'Contact Us | Mithila Heritage Sanctuary',
+  description: 'Reach out to the heart of Mithila heritage for inquiries and support.',
 };
 
 export default function ContactPage() {
   return (
-    <main className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-4xl mx-auto px-4 py-16">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">Contact Us</h1>
-          <p className="text-lg text-gray-600">
-            We&apos;d love to hear from you. Get in touch with us.
-          </p>
+    <main className="min-h-screen bg-secondary pb-32 pt-28">
+      {/* Refined Sanctuary Header */}
+      <section className="bg-heritage-bone border-b border-heritage-dark/5 py-12 md:py-20">
+        <div className="container-sanctuary">
+          <div className="max-w-3xl space-y-6">
+            <span className="label-text text-primary">Get in Touch</span>
+            <h1 className="h1 lowercase first-letter:uppercase text-heritage-dark">
+              Heritage <br /><span className="italic font-normal text-primary">Concierge.</span>
+            </h1>
+            <p className="body-text text-lg">
+              Whether you have a query about a specific heritage piece or wish to discuss a custom commission, our curators are here to assist you.
+            </p>
+          </div>
         </div>
-      </div>
+      </section>
 
-      {/* Content */}
-      <div className="max-w-4xl mx-auto px-4 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
-          {/* Contact Info */}
-          <div className="bg-white rounded-lg shadow-sm p-8">
-            <h2 className="text-xl font-bold text-gray-900 mb-6">Get in Touch</h2>
+      <div className="container-sanctuary py-20">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20 items-start">
+          
+          {/* Primary Contact Methods */}
+          <div className="lg:col-span-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="bg-white p-8 rounded-xl border border-heritage-dark/5 shadow-sm space-y-4">
+              <Mail className="w-6 h-6 text-primary" />
+              <h3 className="label-text">Digital Correspondence</h3>
+              <a href="mailto:info@mithilaheritage.com" className="text-xl font-bold text-heritage-dark hover:text-primary transition-colors block underline decoration-primary/20 hover:decoration-primary underline-offset-4">
+                info@mithilaheritage.com
+              </a>
+            </div>
 
-            <div className="space-y-6">
-              <div>
-                <h3 className="font-bold text-gray-900 mb-2">Email</h3>
-                <a
-                  href="mailto:info@mithilaheritage.com"
-                  className="text-blue-600 hover:text-blue-800"
-                >
-                  info@mithilaheritage.com
-                </a>
-              </div>
+            <div className="bg-white p-8 rounded-xl border border-heritage-dark/5 shadow-sm space-y-4">
+              <Phone className="w-6 h-6 text-primary" />
+              <h3 className="label-text">Voice Assistance</h3>
+              <a href="tel:+919911916497" className="text-xl font-bold text-heritage-dark hover:text-primary transition-colors block">
+                +91 99119 16497
+              </a>
+            </div>
 
-              <div>
-                <h3 className="font-bold text-gray-900 mb-2">Phone</h3>
-                <p className="text-gray-600">+91-XXX-XXX-XXXX</p>
-              </div>
+            <div className="bg-white p-8 rounded-xl border border-heritage-dark/5 shadow-sm space-y-4">
+              <MapPin className="w-6 h-6 text-primary" />
+              <h3 className="label-text">Heritage Origin</h3>
+              <p className="text-xl font-bold text-heritage-dark leading-snug">
+                Madhubani Region, <br />Bihar, India
+              </p>
+            </div>
 
-              <div>
-                <h3 className="font-bold text-gray-900 mb-2">Address</h3>
-                <p className="text-gray-600">
-                  Mithila Heritage
-                  <br />
-                  Mithila Region
-                  <br />
-                  Bihar, India
-                </p>
-              </div>
-
-              <div>
-                <h3 className="font-bold text-gray-900 mb-2">Business Hours</h3>
-                <p className="text-gray-600">
-                  Monday - Friday: 9:00 AM - 6:00 PM
-                  <br />
-                  Saturday: 10:00 AM - 4:00 PM
-                  <br />
-                  Sunday: Closed
-                </p>
-              </div>
+            <div className="bg-white p-8 rounded-xl border border-heritage-dark/5 shadow-sm space-y-4">
+              <Clock className="w-6 h-6 text-primary" />
+              <h3 className="label-text">Concierge Hours</h3>
+              <p className="text-xl font-bold text-heritage-dark leading-snug">
+                Mon - Sat <br />10 AM - 7 PM IST
+              </p>
             </div>
           </div>
 
-          {/* Message Info */}
-          <div className="bg-white rounded-lg shadow-sm p-8">
-            <h2 className="text-xl font-bold text-gray-900 mb-6">Contact Information</h2>
-
-            <div className="space-y-4">
-              <div>
-                <h3 className="font-bold text-gray-900 mb-2">Customer Support</h3>
-                <p className="text-gray-600 text-sm">
-                  For orders, shipping, and product inquiries, please email us or call during
-                  business hours.
-                </p>
-              </div>
-
-              <div>
-                <h3 className="font-bold text-gray-900 mb-2">Artisan Partnerships</h3>
-                <p className="text-gray-600 text-sm">
-                  Interested in partnering with us? We&apos;re always looking for talented artisans.
-                  Contact us to discuss opportunities.
-                </p>
-              </div>
-
-              <div>
-                <h3 className="font-bold text-gray-900 mb-2">Feedback</h3>
-                <p className="text-gray-600 text-sm">
-                  Your feedback helps us improve. Please share your thoughts and suggestions with
-                  us.
-                </p>
-              </div>
-
-              <div>
-                <h3 className="font-bold text-gray-900 mb-2">FAQs</h3>
-                <p className="text-gray-600 text-sm">
-                  Check our FAQs for common questions about shipping, returns, and more.
-                </p>
-              </div>
+          {/* Secondary Features & Visuals */}
+          <div className="lg:col-span-12 grid grid-cols-1 md:grid-cols-2 gap-8 mt-12">
+            <div className="bg-heritage-dark rounded-xl p-10 md:p-16 flex flex-col justify-center gap-8 text-white relative overflow-hidden group min-h-[300px]">
+               <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 rounded-full blur-[100px] opacity-20 transition-all group-hover:opacity-40"></div>
+               <div className="relative z-10 space-y-4 text-left">
+                  <span className="text-primary text-[10px] font-bold uppercase tracking-[0.4em]">Fast Response</span>
+                  <h2 className="text-3xl md:text-4xl font-serif font-bold italic text-heritage-bone">
+                    Instant WhatsApp Concierge
+                  </h2>
+                  <p className="text-heritage-bone/60 font-medium">
+                    Connect directly with our curation team for immediate support and live heritage updates.
+                  </p>
+               </div>
+               <Link href="https://wa.me/919911916497" className="btn-primary w-fit flex items-center gap-3">
+                  Start Chat <MessageCircle className="w-4 h-4" />
+               </Link>
             </div>
-          </div>
-        </div>
 
-        {/* Links */}
-        <div className="bg-white rounded-lg shadow-sm p-8">
-          <h2 className="text-xl font-bold text-gray-900 mb-6">Other Information</h2>
-          <div className="space-y-2">
-            <Link
-              href="/shipping-policy"
-              className="block text-blue-600 hover:text-blue-800 font-medium"
-            >
-              Shipping & Delivery Policy
-            </Link>
-            <Link
-              href="/return-policy"
-              className="block text-blue-600 hover:text-blue-800 font-medium"
-            >
-              Return & Refund Policy
-            </Link>
-            <Link
-              href="/about"
-              className="block text-blue-600 hover:text-blue-800 font-medium"
-            >
-              About Us
-            </Link>
+            <div className="bg-heritage-bone rounded-xl p-10 md:p-16 space-y-8 border border-heritage-dark/5">
+                <h3 className="text-xl font-serif font-bold text-heritage-dark border-b-2 border-primary/20 pb-4 w-fit">Support Pillars</h3>
+                <div className="space-y-6">
+                   {[
+                     { icon: HeartHandshake, title: 'Artisan Welfare', desc: 'Queries regarding fair trade and artisan support programs.' },
+                     { icon: ShieldCheck, title: 'Authenticity Check', desc: 'Concerns about GI tags and heritage certifications.' },
+                   ].map((item, i) => (
+                     <div key={i} className="flex items-start gap-4 text-left">
+                        <item.icon className="w-5 h-5 text-primary mt-1" />
+                        <div className="space-y-1">
+                           <p className="text-sm font-bold text-heritage-dark">{item.title}</p>
+                           <p className="text-sm text-heritage-dark/60 font-medium leading-relaxed italic">{item.desc}</p>
+                        </div>
+                     </div>
+                   ))}
+                </div>
+            </div>
           </div>
         </div>
       </div>

@@ -7,6 +7,8 @@ import { generateOrderId, getEffectivePrice, getDeliveryCharge } from '@/lib/hel
 import { createRazorpayOrder } from '@/lib/razorpay';
 import { validateStock } from '@/lib/pricing';
 import { getClientIP, createOrderLimiter } from '@/lib/middleware';
+import { VALID_COUPONS, calculateCartPrice } from '@/lib/pricing';
+import { formatPrice } from '@/lib/helpers';
 
 /**
  * POST /api/create-order
@@ -26,7 +28,7 @@ export async function POST(request: NextRequest) {
     await connectDB();
 
     const body = await request.json();
-    const { items, shippingInfo, phoneNumber } = body;
+    const { items, shippingInfo, phoneNumber, couponCode } = body;
 
     // Validate input
     if (!items || !Array.isArray(items) || items.length === 0) {
@@ -49,44 +51,34 @@ export async function POST(request: NextRequest) {
 
     const productMap = new Map(products.map((p) => [p._id.toString(), p]));
 
-    let subtotal = 0;
-    const orderItems: any[] = [];
+    const pricingBreakdown = await calculateCartPrice(items, productMap, couponCode);
+    const { subtotal, deliveryCharge, discount, total } = pricingBreakdown;
 
+    const orderItems: any[] = [];
     for (const item of items) {
       const product = productMap.get(item.productId);
-
-      if (!product) {
-        return NextResponse.json(
-          { error: `Product ${item.productId} not found` },
-          { status: 400 }
-        );
-      }
-
-      // Validate stock
-      const stockValidation = validateStock(product, item.quantity);
+      if (!product) continue;
+      
+      const stockValidation = validateStock(product, item.quantity, item.variantName);
       if (!stockValidation.valid) {
-        return NextResponse.json(
-          { error: stockValidation.message },
-          { status: 400 }
-        );
+        return NextResponse.json({ error: stockValidation.message }, { status: 400 });
       }
 
-      const effectivePrice = getEffectivePrice(product.price, product.discount);
-      const itemTotal = effectivePrice * item.quantity;
+      let basePrice = product.price;
+      if (item.variantName && product.variants) {
+        const variant = product.variants.find((v: any) => v.name === item.variantName);
+        if (variant) basePrice = variant.price;
+      }
 
-      subtotal += itemTotal;
-
+      const effectivePrice = getEffectivePrice(basePrice, product.discount);
       orderItems.push({
         productId: product._id,
         name: product.name,
+        variantName: item.variantName || null,
         price: effectivePrice,
         quantity: item.quantity,
       });
     }
-
-    // Calculate delivery charge and total
-    const deliveryCharge = getDeliveryCharge(subtotal);
-    const total = subtotal + deliveryCharge;
 
     // Generate order ID
     const orderId = generateOrderId();
@@ -117,7 +109,10 @@ export async function POST(request: NextRequest) {
       phoneNumber,
       items: orderItems,
       total,
+      subtotal,
       deliveryCharge,
+      discount,
+      couponCode: couponCode?.toUpperCase() || null,
       status: 'pending',
       paymentStatus: 'pending',
       razorpayOrderId: razorpayOrder.id,

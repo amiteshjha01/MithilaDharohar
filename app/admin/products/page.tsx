@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { IProduct } from '@/models/Product';
 import Image from 'next/image';
+import { ArrowLeft, Plus, Edit3, Trash2, Box, Package, AlertCircle } from 'lucide-react';
+import LoadingSpinner from '@/components/LoadingSpinner';
 
 export default function AdminProductsPage() {
   const router = useRouter();
@@ -17,12 +19,10 @@ export default function AdminProductsPage() {
     const fetchProducts = async () => {
       try {
         const key = localStorage.getItem('adminKey');
-
         if (!key) {
           router.push('/admin/dashboard');
           return;
         }
-
         setAdminKey(key);
 
         const res = await fetch('/api/admin/products', {
@@ -30,7 +30,7 @@ export default function AdminProductsPage() {
         });
 
         if (!res.ok) {
-          setError('Failed to fetch products');
+          setError('Failed to fetch catalog');
           setLoading(false);
           return;
         }
@@ -39,7 +39,7 @@ export default function AdminProductsPage() {
         setProducts(data.data);
         setLoading(false);
       } catch (err) {
-        setError('Failed to load products');
+        setError('Heritage Synchronization Interrupted');
         setLoading(false);
       }
     };
@@ -48,7 +48,7 @@ export default function AdminProductsPage() {
   }, [router]);
 
   const handleDelete = async (slug: string) => {
-    if (!confirm('Are you certain you wish to purge this heritage product?')) return;
+    if (!confirm('Are you certain you wish to purge this heritage artifact from the manifest?')) return;
 
     try {
       const res = await fetch(`/api/products/${slug}`, {
@@ -59,71 +59,71 @@ export default function AdminProductsPage() {
       if (res.ok) {
         setProducts(products.filter((p) => p.slug !== slug));
       } else {
-        setError('Failed to delete product');
+        setError('Failed to purge artifact');
       }
     } catch (err) {
-      setError('Failed to delete product');
+      setError('Connection error during purge');
     }
   };
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-secondary flex items-center justify-center p-6">
+      <main className="min-h-screen bg-secondary flex items-center justify-center">
         <div className="flex flex-col items-center gap-6">
-           <div className="w-16 h-16 border-4 border-primary/10 border-t-primary rounded-full animate-spin"></div>
-           <p className="text-[11px] font-black uppercase tracking-[0.4em] text-text-muted">Loading Inventory...</p>
+           <div className="w-10 h-10 border-2 border-primary/10 border-t-primary rounded-full animate-spin"></div>
+           <span className="label-text opacity-40">Syncing Catalog</span>
         </div>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-secondary">
+    <main className="min-h-screen bg-secondary pb-32 pt-28">
       {/* Header */}
-      <div className="bg-white border-b border-[#f0e6da] py-20">
-        <div className="max-w-[1400px] mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-8">
-          <div className="text-center md:text-left">
-            <Link href="/admin/dashboard" className="text-[10px] font-black uppercase tracking-[0.4em] text-primary mb-4 block hover:translate-x-[-4px] transition-transform">
-              ← Dashboard
+      <section className="bg-heritage-bone border-b border-heritage-dark/5 py-12 md:py-16 mb-12">
+        <div className="container-sanctuary">
+          <div className="flex flex-col md:flex-row justify-between items-end gap-10">
+            <div className="space-y-6">
+               <Link href="/admin/dashboard" className="flex items-center gap-2 label-text text-primary hover:opacity-70 transition-opacity">
+                  <ArrowLeft className="w-3 h-3" /> Dashboard
+               </Link>
+               <h1 className="h1 lowercase first-letter:uppercase text-heritage-dark">
+                 Master <br /><span className="italic font-normal text-primary">Catalog.</span>
+               </h1>
+            </div>
+            <Link href="/admin/products/create" className="btn-primary px-8 py-4 flex items-center gap-3">
+              <Plus className="w-4 h-4" /> Add Artifact
             </Link>
-            <h1 className="text-5xl font-bold text-text-main text-serif tracking-tight">Heritage Inventory</h1>
           </div>
-          <Link
-            href="/admin/products/create"
-            className="btn-premium-primary !px-10 !py-4 shadow-xl text-[12px]"
-          >
-            Add New Product
-          </Link>
         </div>
-      </div>
+      </section>
 
-      {/* Products Table */}
-      <div className="max-w-[1400px] mx-auto px-6 py-16">
+      <div className="container-sanctuary">
         {error && (
-          <div className="bg-primary/5 border border-primary/10 text-primary px-8 py-4 rounded-2xl mb-10 text-xs font-bold uppercase tracking-widest">
-            {error}
+          <div className="bg-heritage-red/5 border border-heritage-red/10 text-heritage-red px-6 py-4 rounded-xl mb-12 flex items-center gap-4 text-[10px] font-bold uppercase tracking-widest">
+            <AlertCircle className="w-4 h-4" /> {error}
           </div>
         )}
 
-        <div className="bg-white rounded-[3rem] shadow-2xl shadow-primary/5 border border-[#f0e6da] overflow-hidden">
+        <div className="bg-white rounded-xl shadow-sm border border-heritage-dark/5 overflow-hidden animate-fade-up">
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead>
-                <tr className="bg-secondary/30 border-b border-[#f0e6da]">
-                  <th className="px-10 py-6 text-[10px] font-black uppercase tracking-[0.3em] text-text-muted">Product Identity</th>
-                  <th className="px-10 py-6 text-[10px] font-black uppercase tracking-[0.3em] text-text-muted">Category</th>
-                  <th className="px-10 py-6 text-[10px] font-black uppercase tracking-[0.3em] text-text-muted text-right">Valuation</th>
-                  <th className="px-10 py-6 text-[10px] font-black uppercase tracking-[0.3em] text-text-muted text-center">Stock</th>
-                  <th className="px-10 py-6 text-[10px] font-black uppercase tracking-[0.3em] text-text-muted text-center">Status</th>
-                  <th className="px-10 py-6 text-[10px] font-black uppercase tracking-[0.3em] text-text-muted text-center">Actions</th>
+                <tr className="bg-heritage-bone/50 border-b border-heritage-dark/5">
+                  <th className="px-8 py-4 label-text opacity-30">Artifact Identity</th>
+                  <th className="px-8 py-4 label-text opacity-30">Category</th>
+                  <th className="px-8 py-4 label-text opacity-30 text-right">Valuation</th>
+                  <th className="px-8 py-4 label-text opacity-30 text-center">Stock</th>
+                  <th className="px-8 py-4 label-text opacity-30 text-center">Status</th>
+                  <th className="px-8 py-4 label-text opacity-30 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#f0e6da]/50">
+              <tbody className="divide-y divide-heritage-dark/5">
                 {products.map((product) => (
-                  <tr key={product._id?.toString()} className="hover:bg-secondary/20 transition-colors group">
-                    <td className="px-10 py-8">
-                      <div className="flex items-center gap-6">
-                        <div className="w-16 h-16 relative rounded-2xl overflow-hidden shadow-sm card-premium-v2">
+                  <tr key={product._id?.toString()} className="hover:bg-heritage-bone/30 transition-colors group">
+                    <td className="px-8 py-6">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 relative rounded-lg overflow-hidden border border-heritage-dark/5 shadow-sm">
                            <Image
                              src={product.images?.[0] || '/placeholder.png'}
                              alt={product.name}
@@ -131,49 +131,49 @@ export default function AdminProductsPage() {
                              className="object-cover"
                            />
                         </div>
-                        <div>
-                          <p className="text-lg font-bold text-text-main text-serif mb-1 group-hover:text-primary transition-colors">
+                        <div className="space-y-1">
+                          <p className="text-sm font-bold text-heritage-dark group-hover:text-primary transition-colors">
                             {product.name}
                           </p>
-                          <p className="text-[10px] font-bold text-text-muted uppercase tracking-widest">
+                          <p className="text-[10px] font-bold text-heritage-dark/30 uppercase tracking-widest">
                             {product.slug}
                           </p>
                         </div>
                       </div>
                     </td>
-                    <td className="px-10 py-8">
-                       <span className="text-[11px] font-black text-primary uppercase tracking-widest border border-primary/10 px-3 py-1 rounded-full">{product.category}</span>
+                    <td className="px-8 py-6">
+                       <span className="text-[9px] font-bold text-primary uppercase tracking-widest border border-primary/20 px-3 py-1 rounded-full">{product.category}</span>
                     </td>
-                    <td className="px-10 py-8 text-right font-black text-text-main text-lg tracking-tighter">
+                    <td className="px-8 py-6 text-right font-serif font-bold text-heritage-dark text-lg italic tracking-tighter">
                       ₹{product.price.toFixed(0)}
                     </td>
-                    <td className="px-10 py-8 text-center text-sm font-bold text-text-muted">
+                    <td className="px-8 py-6 text-center text-xs font-bold text-heritage-dark/40">
                       {product.stockQuantity} Units
                     </td>
-                    <td className="px-10 py-8 text-center">
-                      <span
-                        className={`text-[9px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full ${
-                          product.inStock
-                            ? 'bg-green-50 text-green-700 border border-green-100'
-                            : 'bg-red-50 text-red-700 border border-red-100'
-                        }`}
-                      >
-                        {product.inStock ? 'Available' : 'Sold Out'}
+                    <td className="px-8 py-6 text-center">
+                      <span className={`px-4 py-1.5 rounded-full text-[9px] font-bold uppercase tracking-widest border ${
+                        product.inStock 
+                          ? 'bg-green-50 text-green-700 border-green-100' 
+                          : 'bg-heritage-red/5 text-heritage-red border-heritage-red/10'
+                      }`}>
+                        {product.inStock ? 'Available' : 'Depleted'}
                       </span>
                     </td>
-                    <td className="px-10 py-8 text-center">
-                      <div className="flex items-center justify-center gap-6">
+                    <td className="px-8 py-6">
+                      <div className="flex items-center justify-end gap-4">
                         <Link
                           href={`/admin/products/${product._id}/edit`}
-                          className="text-[10px] font-black uppercase tracking-widest text-text-muted hover:text-primary transition-colors"
+                          className="p-2 text-heritage-dark/30 hover:text-primary transition-colors"
+                          title="Edit Manifest"
                         >
-                          Edit
+                          <Edit3 className="w-4 h-4" />
                         </Link>
                         <button
                           onClick={() => handleDelete(product.slug)}
-                          className="text-[10px] font-black uppercase tracking-widest text-[#b33936] hover:text-red-700 transition-colors"
+                          className="p-2 text-heritage-dark/30 hover:text-heritage-red transition-colors"
+                          title="Purge Artifact"
                         >
-                          Purge
+                          <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
                     </td>

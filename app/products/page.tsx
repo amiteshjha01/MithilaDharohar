@@ -1,110 +1,178 @@
-import { connectDB } from '@/lib/db';
-import Product from '@/models/Product';
+'use client';
+
+import { useEffect, useState, useMemo, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import ProductCard from '@/components/ProductCard';
-import { Metadata } from 'next';
 import Link from 'next/link';
+import { SearchX, ArrowUpDown, Sparkles } from 'lucide-react';
+import SkeletonLoader from '@/components/SkeletonLoader';
 
-export const metadata: Metadata = {
-  title: 'Heritage Collections | MithilaDharohar',
-  description: 'Explore our authentic collection of handmade achars, Madhubani art, and traditional textiles.',
-};
+function ProductsContent() {
+  const searchParams = useSearchParams();
+  const category = searchParams.get('category');
+  const searchQuery = searchParams.get('search')?.toLowerCase() || '';
 
-interface PageProps {
-  searchParams: Promise<{ category?: string }>;
-}
+  const [products, setProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [sortBy, setSortBy] = useState('newest');
 
-export default async function ProductsPage({ searchParams }: PageProps) {
-  const params = await searchParams;
-  const category = params.category;
+  useEffect(() => {
+    const fetchProducts = async () => {
+      setLoading(true);
+      try {
+        const url = category ? `/api/products?category=${category}` : '/api/products';
+        const res = await fetch(url);
+        const data = await res.json();
+        if (data.success) {
+          setProducts(data.data);
+        }
+      } catch (err) {
+        console.error('Failed to fetch heritage:', err);
+      } finally {
+        setTimeout(() => setLoading(false), 300);
+      }
+    };
 
-  await connectDB();
+    fetchProducts();
+  }, [category]);
 
-  const query: any = {};
-  if (category) {
-    // Perform case-insensitive search to match 'Food' with 'food', etc.
-    query.category = { $regex: new RegExp(`^${category}$`, 'i') };
-  }
+  const filteredProducts = useMemo(() => {
+    let result = products;
 
-  const productsRaw = await Product.find(query).lean();
-  const products = JSON.parse(JSON.stringify(productsRaw));
+    if (searchQuery) {
+      result = result.filter(p => 
+        p.name.toLowerCase().includes(searchQuery) || 
+        p.description?.toLowerCase().includes(searchQuery) ||
+        p.category?.toLowerCase().includes(searchQuery)
+      );
+    }
+
+    const sorted = [...result];
+    if (sortBy === 'price-low') {
+      sorted.sort((a, b) => a.price - b.price);
+    } else if (sortBy === 'price-high') {
+      sorted.sort((a, b) => b.price - a.price);
+    } else if (sortBy === 'name') {
+      sorted.sort((a, b) => a.name.localeCompare(b.name));
+    }
+
+    return sorted;
+  }, [products, searchQuery, sortBy]);
 
   const categories = ['food', 'clothing', 'craft', 'festive'];
 
   return (
-    <main className="min-h-screen bg-secondary">
-      {/* Editorial Header Section */}
-      <div className="bg-heritage-bone border-b border-primary/5 pt-24 pb-20">
-        <div className="container-editorial text-center">
-          <span className="text-[10px] font-bold uppercase tracking-[0.6em] text-primary mb-6 block animate-fade-up">
-             The Collections
-          </span>
-          <h1 className="text-5xl md:text-8xl font-serif font-bold text-heritage-dark mb-8 animate-fade-up" style={{ animationDelay: '0.2s' }}>
-            Boutique <span className="italic font-normal text-primary">Heritage.</span>
-          </h1>
-          <p className="text-lg text-heritage-muted max-w-2xl mx-auto leading-relaxed font-medium animate-fade-up" style={{ animationDelay: '0.4s' }}>
-             Every item in our collection is sustainably sourced and handcrafted by traditional artisans, preserving the ancient soul of Mithila.
-          </p>
-        </div>
-      </div>
+    <main className="min-h-screen bg-secondary pb-32 pt-28">
+      {/* 01. Refined Boutique Header */}
+      <section className="bg-heritage-bone border-b border-heritage-dark/5 py-12 md:py-20">
+        <div className="container-sanctuary">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
+            <div className="space-y-4 max-w-2xl">
+              <span className="label-text text-primary">
+                {searchQuery ? 'Search Discovery' : category ? `Category: ${category}` : 'The Collection'}
+              </span>
+              <h1 className="h1 lowercase first-letter:uppercase text-heritage-dark">
+                {searchQuery ? `"${searchParams.get('search')}"` : <>Heritage <br /><span className="italic font-normal text-primary">Collection.</span></>}
+              </h1>
+            </div>
 
-      <div className="container-editorial py-20 pb-40">
-        {/* Boutique Category Filter */}
-        <div className="mb-24 overflow-x-auto no-scrollbar">
-          <div className="flex justify-center gap-6 min-w-max pb-4">
-            <Link
-              href="/products"
-              className={`px-10 py-4 rounded-full text-[10px] font-bold uppercase tracking-[0.3em] transition-all duration-300 border ${
-                !category
-                  ? 'bg-primary text-heritage-bone border-primary shadow-2xl'
-                  : 'bg-white text-heritage-dark border-primary/10 hover:border-primary hover:text-primary'
-              }`}
-            >
-              All Pieces
-            </Link>
-            {categories.map((cat) => (
-              <Link
-                key={cat}
-                href={`/products?category=${cat}`}
-                className={`px-10 py-4 rounded-full text-[10px] font-bold uppercase tracking-[0.3em] transition-all duration-300 border capitalize ${
-                  category === cat
-                    ? 'bg-primary text-heritage-bone border-primary shadow-2xl'
-                    : 'bg-white text-heritage-dark border-primary/10 hover:border-primary hover:text-primary'
-                }`}
-              >
-                {cat === 'food' ? 'Heritage Food' : cat === 'clothing' ? 'Handlooms' : cat === 'culture' ? 'Mithila Art' : 'Festive'}
-              </Link>
-            ))}
+            {/* Utility Row: Sorting */}
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3 bg-white px-6 py-3 rounded-lg border border-heritage-dark/5 shadow-sm">
+                <ArrowUpDown className="w-4 h-4 text-primary" />
+                <select 
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="bg-transparent text-[10px] font-bold uppercase tracking-widest text-heritage-dark outline-none cursor-pointer"
+                >
+                  <option value="newest">Latest Collections</option>
+                  <option value="price-low">Price: Low to High</option>
+                  <option value="price-high">Price: High to Low</option>
+                  <option value="name">Alphabetical</option>
+                </select>
+              </div>
+            </div>
           </div>
         </div>
+      </section>
 
-        {/* Staggered Products Grid (Filtered) */}
-        {products && products.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-12 gap-y-24">
-            {products.map((product: any, idx: number) => (
-              <div key={product._id.toString()} className={`animate-fade-up ${idx % 2 === 1 ? 'md:translate-y-12' : ''}`}>
-                 <ProductCard product={product} />
-              </div>
+      <div className="container-sanctuary py-12">
+        {/* Category Navigation - Subtle & Stable */}
+        <div className="mb-16 overflow-x-auto no-scrollbar border-b border-heritage-dark/5">
+           <div className="flex items-center gap-10 min-w-max">
+             <Link 
+               href="/products" 
+               className={`text-[10px] font-bold uppercase tracking-widest pb-4 border-b-2 transition-all ${!category ? 'text-primary border-primary' : 'text-heritage-dark/40 border-transparent hover:text-heritage-dark'}`}
+             >
+               All Selection
+             </Link>
+             {categories.map(cat => (
+               <Link 
+                 key={cat} 
+                 href={`/products?category=${cat}`}
+                 className={`text-[10px] font-bold uppercase tracking-widest pb-4 border-b-2 transition-all capitalize ${category === cat ? 'text-primary border-primary' : 'text-heritage-dark/40 border-transparent hover:text-heritage-dark'}`}
+               >
+                 {cat}
+               </Link>
+             ))}
+           </div>
+        </div>
+
+        {/* 2-Column Responsive Grid */}
+        {loading ? (
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-10">
+            {[...Array(8)].map((_, i) => (
+              <SkeletonLoader key={i} />
+            ))}
+          </div>
+        ) : filteredProducts.length > 0 ? (
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-10">
+            {filteredProducts.map((product) => (
+              <ProductCard key={product._id} product={product} />
             ))}
           </div>
         ) : (
-          <div className="text-center py-40 bg-heritage-bone rounded-[4rem] border border-primary/5">
-             <div className="max-w-md mx-auto px-6">
-                <div className="text-6xl font-serif text-primary opacity-20 mb-8 italic">Coming Soon</div>
-                <h3 className="text-2xl font-serif font-bold text-heritage-dark mb-6 tracking-widest uppercase">Archive in Progress</h3>
-                <p className="text-heritage-muted text-lg font-medium mb-12 leading-relaxed">
-                   Our artisans are currently hand-pouring their soul into new pieces for this category. Check back soon for authentic Mithila treasures.
+          <div className="text-center py-32 bg-heritage-bone/30 rounded-xl border border-heritage-dark/5">
+             <div className="max-w-md mx-auto px-8 flex flex-col items-center gap-6">
+                <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center text-primary shadow-sm">
+                   <SearchX className="w-8 h-8 opacity-20" />
+                </div>
+                <h3 className="text-xl font-bold text-heritage-dark">No products found.</h3>
+                <p className="body-text text-sm mb-4">
+                   We couldn't find any products matching your current selection.
                 </p>
-                <Link
-                  href="/products"
-                  className="btn-boutique btn-boutique-primary !px-14"
-                >
-                  Browse All Collections
+                <Link href="/products" className="btn-outline">
+                  Clear Selection
                 </Link>
              </div>
           </div>
         )}
       </div>
+
+      {/* Preservation Banner */}
+      <section className="container-sanctuary mt-24">
+         <div className="bg-heritage-dark rounded-xl p-10 md:p-20 relative overflow-hidden text-center md:text-left bg-gradient-to-br from-heritage-dark to-black/80">
+            <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-10">
+              <div className="space-y-4 max-w-xl">
+                 <h2 className="text-2xl md:text-3xl font-serif font-bold text-heritage-bone italic leading-snug">
+                   Every piece preserves a lineage of over 500 women artisans in rural Mithila.
+                 </h2>
+                 <p className="text-[10px] font-bold text-primary uppercase tracking-[0.4em]">The Preservation Promise</p>
+              </div>
+              <Sparkles className="w-10 h-10 text-primary opacity-30 animate-pulse" />
+            </div>
+            <div className="absolute top-0 right-0 w-64 h-full bg-white/5 skew-x-12 translate-x-20"></div>
+         </div>
+      </section>
     </main>
+  );
+}
+
+export default function ProductsPage() {
+  return (
+    <Suspense fallback={<div className="container-sanctuary py-32 flex justify-center text-primary">Loading collection...</div>}>
+      <ProductsContent />
+    </Suspense>
   );
 }
 

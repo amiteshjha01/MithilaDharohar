@@ -4,6 +4,20 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { CheckoutPayload, ShippingInfo } from '@/lib/types';
 import Link from 'next/link';
+import {
+  ArrowLeft,
+  ShieldCheck,
+  Truck,
+  MapPin,
+  User,
+  Phone,
+  CreditCard,
+  Lock,
+  ChevronRight,
+  Zap
+} from 'lucide-react';
+import { getEffectivePrice } from '@/lib/helpers';
+import { toast } from 'sonner';
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -11,6 +25,8 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [couponCode, setCouponCode] = useState('');
+  const [discount, setDiscount] = useState(0);
 
   const [formData, setFormData] = useState<ShippingInfo>({
     name: '',
@@ -27,44 +43,52 @@ export default function CheckoutPage() {
     const fetchCheckoutDetails = async () => {
       try {
         const cart = JSON.parse(localStorage.getItem('cart') || '{"items":[]}');
-
-        if (cart.items.length === 0) {
+        if (!cart.items || cart.items.length === 0) {
           router.push('/products');
           return;
         }
 
         const res = await fetch('/api/products?category=all');
         const data = await res.json();
-        
-        const products = cart.items.map((item: any) => {
-           const product = data.data?.find((p: any) => p._id.toString() === item.productId.toString());
-           return product ? { ...product, quantity: item.quantity } : null;
+        const products = cart.items.map((cartItem: any) => {
+          const product = data.data?.find((p: any) => p._id.toString() === cartItem.productId.toString());
+          if (!product) return null;
+          let finalBasePrice = product.price;
+          if (cartItem.variantName && product.variants) {
+            const variant = product.variants.find((v: any) => v.name === cartItem.variantName);
+            if (variant) finalBasePrice = variant.price;
+          }
+          return { 
+            ...product, 
+            quantity: cartItem.quantity, 
+            variantName: cartItem.variantName,
+            effectiveBasePrice: finalBasePrice 
+          };
         }).filter(Boolean);
-
         setCartItems(products);
       } catch (err) {
-        setError('Failed to load heritage checkout data');
+        setError('Failed to load checkout data');
       } finally {
-        setLoading(false);
+        setTimeout(() => setLoading(false), 300);
       }
     };
-
     fetchCheckoutDetails();
+
+    const savedCoupon = localStorage.getItem('appliedCoupon');
+    if (savedCoupon) {
+      setCouponCode(savedCoupon);
+      // We'll re-validate shortly or use the summary logic
+    }
   }, [router]);
 
   const subtotal = cartItems.reduce((sum, item) => {
-    const { getEffectivePrice } = require('@/lib/helpers');
-    return sum + (getEffectivePrice(item.price, item.discount) * item.quantity);
+    return sum + (getEffectivePrice(item.effectiveBasePrice, item.discount) * item.quantity);
   }, 0);
+  const deliveryCharge = subtotal >= 999 ? 0 : 99;
 
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -73,43 +97,34 @@ export default function CheckoutPage() {
     setError('');
 
     try {
-      // Unified validation (Removed duplicate mobile check)
       if (!formData.name || !formData.pincode || !formData.city || !formData.state || !formData.addressLine || !phoneNumber) {
-        setError('Please complete all heritage details for your sacred order');
+        setError('Complete all details to proceed');
         setSubmitting(false);
         return;
       }
-
       const cart = JSON.parse(localStorage.getItem('cart') || '{"items":[]}');
       const payload: CheckoutPayload = {
         items: cart.items,
-        shippingInfo: {
-          ...formData,
-          mobile: phoneNumber // Map for backend compatibility
-        },
+        shippingInfo: { ...formData, mobile: phoneNumber },
         phoneNumber,
+        couponCode: couponCode || undefined,
       };
-
       const res = await fetch('/api/create-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
-
       const data = await res.json();
-
       if (!res.ok) {
-        setError(data.error || 'Failed to authenticate the sacred order');
+        setError(data.error || 'Failed to create your order');
         setSubmitting(false);
         return;
       }
-
       localStorage.setItem('currentOrder', JSON.stringify({
         orderId: data.data.orderId,
         razorpayOrderId: data.data.razorpayOrderId,
         amount: data.data.amount,
       }));
-
       router.push('/payment');
     } catch (err) {
       setError('A connection error occurred. Please try again.');
@@ -120,125 +135,80 @@ export default function CheckoutPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-secondary flex items-center justify-center p-6">
-        <div className="flex flex-col items-center gap-6">
-           <div className="w-16 h-16 border-4 border-primary/10 border-t-primary rounded-full animate-spin"></div>
-           <p className="text-[10px] font-bold uppercase tracking-[0.4em] text-heritage-muted">Preparing Your Heritage Passage...</p>
-        </div>
+      <main className="min-h-screen bg-secondary flex items-center justify-center">
+        <div className="w-10 h-10 border-2 border-primary/10 border-t-primary rounded-full animate-spin"></div>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-secondary pb-40">
-      {/* Editorial Header */}
-      <div className="bg-heritage-bone border-b border-primary/5 py-24 md:py-32">
-        <div className="container-editorial">
-           <span className="text-[10px] font-bold uppercase tracking-[0.6em] text-primary mb-6 block animate-fade-up">Final Validation</span>
-           <h1 className="text-5xl md:text-9xl font-serif font-bold text-heritage-dark tracking-tighter animate-fade-up">Checkout</h1>
+    <main className="min-h-screen bg-secondary pb-32 pt-28">
+      <div className="bg-heritage-bone border-b border-heritage-dark/5 py-12 md:py-20 mb-12">
+        <div className="container-sanctuary">
+           <div className="mb-6">
+              <Link href="/cart" className="group flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-heritage-dark/60 hover:text-primary transition-colors">
+                <ArrowLeft className="w-4 h-4" /> Back to Cart
+              </Link>
+           </div>
+           <h1 className="h1 lowercase first-letter:uppercase text-heritage-dark">Secure <span className="italic font-normal text-primary">Checkout.</span></h1>
         </div>
       </div>
 
-      <div className="container-editorial mt-16 md:mt-24">
+      <div className="container-sanctuary">
         {error && (
-          <div className="bg-primary/5 border border-primary/10 text-primary px-8 py-6 rounded-3xl mb-12 flex items-center gap-6 animate-fade-up text-[10px] font-bold uppercase tracking-widest shadow-sm">
-            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd"/></svg>
-            {error}
+          <div className="bg-heritage-red/5 border border-heritage-red/10 text-heritage-red px-6 py-4 rounded-xl mb-12 flex items-center gap-4 text-[10px] font-bold uppercase tracking-widest animate-fade-up">
+            <Lock className="w-4 h-4" /> {error}
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 md:gap-32 items-start">
-          <div className="lg:col-span-8 space-y-20">
-            <form onSubmit={handleSubmit} className="space-y-20">
-              {/* identity Section */}
-              <section className="animate-fade-up" style={{ animationDelay: '0.1s' }}>
-                <div className="flex items-center gap-6 mb-12">
-                   <span className="text-4xl font-serif italic text-primary/20">01.</span>
-                   <h2 className="text-3xl font-serif font-bold text-heritage-dark underline decoration-primary/10 underline-offset-8">Personal Heritage</h2>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20 items-start">
+          <div className="lg:col-span-7 space-y-8">
+            <form onSubmit={handleSubmit} className="space-y-8">
+              <section className="bg-white p-8 md:p-12 rounded-xl border border-heritage-dark/5 shadow-sm">
+                <div className="flex items-center gap-4 mb-10">
+                  <User className="w-5 h-5 text-primary" />
+                  <h2 className="text-xl font-bold text-heritage-dark px-4 border-l-2 border-primary">Your Details</h2>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                  <div className="space-y-4">
-                    <label className="text-[9px] font-bold uppercase tracking-[0.3em] text-heritage-muted ml-2">Full Identity</label>
-                    <input
-                      type="text"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleInputChange}
-                      placeholder="NAME ON ARTISAN LIST"
-                      className="w-full px-8 py-5 bg-white border border-primary/10 rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all text-[11px] font-bold tracking-[0.2em] uppercase placeholder:text-heritage-muted/30"
-                      required
-                    />
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="space-y-3">
+                    <label className="label-text ml-1 opacity-40">Full Name</label>
+                    <input type="text" name="name" value={formData.name} onChange={handleInputChange} placeholder="Recipient Name" className="w-full px-6 py-4 bg-heritage-bone/50 border border-heritage-dark/5 rounded-xl focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all text-sm font-medium" required />
                   </div>
-                  <div className="space-y-4">
-                    <label className="text-[9px] font-bold uppercase tracking-[0.3em] text-heritage-muted ml-2">Contact Number</label>
-                    <input
-                      type="tel"
-                      value={phoneNumber}
-                      onChange={(e) => setPhoneNumber(e.target.value)}
-                      placeholder="+91 00000 00000"
-                      className="w-full px-8 py-5 bg-white border border-primary/10 rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all text-[11px] font-bold tracking-[0.2em] uppercase placeholder:text-heritage-muted/30"
-                      required
-                    />
+                  <div className="space-y-3">
+                    <label className="label-text ml-1 opacity-40">Mobile Number</label>
+                    <div className="relative">
+                      <Phone className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-heritage-dark/20" />
+                      <input type="tel" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} placeholder="10-digit mobile" className="w-full pl-14 pr-6 py-4 bg-heritage-bone/50 border border-heritage-dark/5 rounded-xl focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all text-sm font-medium" required />
+                    </div>
                   </div>
                 </div>
               </section>
 
-              {/* Shipping Section */}
-              <section className="animate-fade-up" style={{ animationDelay: '0.2s' }}>
-                <div className="flex items-center gap-6 mb-12">
-                   <span className="text-4xl font-serif italic text-primary/20">02.</span>
-                   <h2 className="text-3xl font-serif font-bold text-heritage-dark underline decoration-primary/10 underline-offset-8">The Destination</h2>
+              <section className="bg-white p-8 md:p-12 rounded-xl border border-heritage-dark/5 shadow-sm">
+                <div className="flex items-center gap-4 mb-10">
+                  <MapPin className="w-5 h-5 text-primary" />
+                  <h2 className="text-xl font-bold text-heritage-dark px-4 border-l-2 border-primary">Shipping Address</h2>
                 </div>
-                <div className="space-y-10">
-                  <div className="space-y-4">
-                    <label className="text-[9px] font-bold uppercase tracking-[0.3em] text-heritage-muted ml-2">Sanctuary Address</label>
-                    <textarea
-                      name="addressLine"
-                      value={formData.addressLine}
-                      onChange={handleInputChange}
-                      placeholder="HOUSE, STREET, LOCALITY..."
-                      rows={3}
-                      className="w-full px-8 py-5 bg-white border border-primary/10 rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all text-[11px] font-bold tracking-[0.2em] uppercase placeholder:text-heritage-muted/30 resize-none leading-relaxed"
-                      required
-                    />
+
+                <div className="space-y-8">
+                  <div className="space-y-3">
+                    <label className="label-text ml-1 opacity-40">Full Address</label>
+                    <textarea name="addressLine" value={formData.addressLine} onChange={handleInputChange} placeholder="House No, Street, Landmark..." rows={3} className="w-full px-6 py-4 bg-heritage-bone/50 border border-heritage-dark/5 rounded-xl focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all text-sm font-medium resize-none leading-relaxed" required />
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-                    <div className="space-y-4">
-                      <label className="text-[9px] font-bold uppercase tracking-[0.3em] text-heritage-muted ml-2">City</label>
-                      <input
-                        type="text"
-                        name="city"
-                        value={formData.city}
-                        onChange={handleInputChange}
-                        placeholder="CITY"
-                        className="w-full px-8 py-5 bg-white border border-primary/10 rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all text-[11px] font-bold tracking-[0.2em] uppercase placeholder:text-heritage-muted/30"
-                        required
-                      />
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div className="space-y-3">
+                      <label className="label-text ml-1 opacity-40">City</label>
+                      <input type="text" name="city" value={formData.city} onChange={handleInputChange} placeholder="City" className="w-full px-6 py-4 bg-heritage-bone/50 border border-heritage-dark/5 rounded-xl focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all text-sm font-medium" required />
                     </div>
-                    <div className="space-y-4">
-                      <label className="text-[9px] font-bold uppercase tracking-[0.3em] text-heritage-muted ml-2">State</label>
-                      <input
-                        type="text"
-                        name="state"
-                        value={formData.state}
-                        onChange={handleInputChange}
-                        placeholder="STATE"
-                        className="w-full px-8 py-5 bg-white border border-primary/10 rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all text-[11px] font-bold tracking-[0.2em] uppercase placeholder:text-heritage-muted/30"
-                        required
-                      />
+                    <div className="space-y-3">
+                      <label className="label-text ml-1 opacity-40">State</label>
+                      <input type="text" name="state" value={formData.state} onChange={handleInputChange} placeholder="State" className="w-full px-6 py-4 bg-heritage-bone/50 border border-heritage-dark/5 rounded-xl focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all text-sm font-medium" required />
                     </div>
-                    <div className="space-y-4">
-                      <label className="text-[9px] font-bold uppercase tracking-[0.3em] text-heritage-muted ml-2">PIN Code</label>
-                      <input
-                        type="text"
-                        name="pincode"
-                        value={formData.pincode}
-                        onChange={handleInputChange}
-                        placeholder="000000"
-                        className="w-full px-8 py-5 bg-white border border-primary/10 rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all text-[11px] font-bold tracking-[0.2em] uppercase placeholder:text-heritage-muted/30"
-                        required
-                      />
+                    <div className="space-y-3">
+                      <label className="label-text ml-1 opacity-40">Pincode</label>
+                      <input type="text" name="pincode" value={formData.pincode} onChange={handleInputChange} placeholder="6-digits" className="w-full px-6 py-4 bg-heritage-bone/50 border border-heritage-dark/5 rounded-xl focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all text-sm font-medium" required />
                     </div>
                   </div>
                 </div>
@@ -246,44 +216,69 @@ export default function CheckoutPage() {
             </form>
           </div>
 
-          <div className="lg:col-span-4 lg:sticky lg:top-40">
-            <div className="bg-heritage-dark text-heritage-bone rounded-[4rem] p-12 shadow-3xl relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-48 h-48 bg-primary/10 rounded-full blur-3xl -mr-12 -mt-12"></div>
-              
-              <h2 className="text-[11px] font-bold uppercase tracking-[0.4em] text-heritage-gold mb-12 pb-8 border-b border-white/5">Order Dossier</h2>
+          <div className="lg:col-span-5 lg:sticky lg:top-32">
+            <div className="bg-white rounded-xl p-8 border border-heritage-dark/5 shadow-md space-y-8">
+              <h2 className="label-text pb-4 border-b border-heritage-dark/5">Order Summary</h2>
 
-              <div className="space-y-8 mb-12 pb-12 border-b border-white/5 max-h-72 overflow-y-auto pr-4 no-scrollbar">
-                 {cartItems.map((item, i) => (
-                    <div key={i} className="flex justify-between items-start gap-8 group">
-                       <span className="text-[10px] font-bold text-heritage-bone/90 uppercase tracking-[0.2em] line-clamp-1 flex-1 group-hover:text-heritage-gold transition-colors italic leading-relaxed">{item.name}</span>
-                       <span className="text-heritage-gold text-[10px] font-bold tracking-widest whitespace-nowrap">Q: {item.quantity}</span>
+              <div className="space-y-6 max-h-[300px] overflow-y-auto no-scrollbar pr-2">
+                {cartItems.map((item, i) => {
+                  const price = getEffectivePrice(item.effectiveBasePrice, item.discount);
+                  return (
+                    <div key={i} className="flex justify-between items-start gap-4 animate-fade-up" style={{ animationDelay: `${i * 0.1}s` }}>
+                      <div className="space-y-1">
+                        <p className="text-[11px] font-bold text-heritage-dark uppercase tracking-tight">{item.name}</p>
+                        {item.variantName && (
+                          <div className="flex items-center gap-1.5">
+                            <Zap className="w-2.5 h-2.5 text-primary" />
+                            <span className="text-[9px] font-bold text-primary/60 uppercase tracking-widest">{item.variantName}</span>
+                          </div>
+                        )}
+                        <p className="text-[9px] font-bold text-heritage-dark/30 uppercase tracking-widest">₹{price} × {item.quantity}</p>
+                      </div>
+                      <span className="text-sm font-bold text-heritage-dark">₹{(price * item.quantity).toFixed(0)}</span>
                     </div>
-                 ))}
+                  );
+                })}
               </div>
 
-              <div className="space-y-8 mb-16">
-                 <div className="flex justify-between items-center text-[11px] font-bold uppercase tracking-[0.3em]">
-                    <span className="text-heritage-bone/40">Boutique Delivery</span>
-                    <span className="text-heritage-gold italic font-serif text-[12px]">Complimentary</span>
-                 </div>
-                 <div className="flex justify-between items-end border-t border-white/5 pt-8">
-                    <span className="text-[10px] font-bold uppercase tracking-[0.4em] text-white/40">Total Acquisition</span>
-                    <span className="text-5xl font-serif font-bold tracking-tighter text-heritage-bone italic">₹{subtotal.toFixed(0)}</span>
-                 </div>
+              <div className="space-y-4 pt-6 border-t border-heritage-dark/5">
+                <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-widest text-heritage-dark/40">
+                  <span>Subtotal</span>
+                  <span className="text-heritage-dark">₹{subtotal.toFixed(0)}</span>
+                </div>
+                
+                {couponCode && (
+                   <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-widest text-primary">
+                    <span>Discount ({couponCode})</span>
+                    <span>Applied</span>
+                  </div>
+                )}
+
+                <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-widest text-heritage-dark/40">
+                  <span>Shipping Info</span>
+                  <span className={`${deliveryCharge === 0 ? 'text-primary' : 'text-heritage-dark'}`}>
+                    {deliveryCharge === 0 ? 'Free Shipping' : `₹${deliveryCharge}`}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center pt-6 border-t border-heritage-dark/5">
+                  <span className="label-text">Order Total</span>
+                  <span className="text-[9px] font-bold text-heritage-dark/20 uppercase tracking-widest mr-2">(Re-calculating on secure server)</span>
+                  <span className="text-3xl font-bold text-heritage-dark italic">Finalized at Pay</span>
+                </div>
               </div>
 
-              <button
-                onClick={() => handleSubmit(null as any)}
-                disabled={submitting}
-                className="btn-boutique !bg-heritage-bone !text-heritage-dark w-full shadow-3xl !py-6 !text-[12px] hover:!bg-primary hover:!text-heritage-bone"
-              >
-                {submitting ? 'Authenticating...' : 'Authorize Acquisition'}
+              <button onClick={() => handleSubmit(null as any)} disabled={submitting} className="w-full btn-primary py-5 rounded-lg flex items-center justify-center gap-3 disabled:opacity-50">
+                {submitting ? 'Processing...' : <><Lock className="w-4 h-4" /> Buy Now</>}
               </button>
 
-              <div className="mt-12 flex flex-col items-center gap-6 border-t border-white/5 pt-8">
-                 <div className="flex items-center gap-4 text-[9px] font-bold uppercase tracking-[0.3em] text-heritage-bone/20">
-                   <svg className="w-5 h-5 text-primary/40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-                   Secure Heritage Gateway
+              <div className="grid grid-cols-2 gap-4 pt-8 border-t border-heritage-dark/5 opacity-30">
+                 <div className="flex flex-col items-center gap-2 text-center">
+                    <ShieldCheck className="w-4 h-4 text-heritage-dark" />
+                    <span className="text-[8px] font-bold uppercase tracking-widest">SSL Encrypted</span>
+                 </div>
+                 <div className="flex flex-col items-center gap-2 text-center">
+                    <CreditCard className="w-4 h-4 text-heritage-dark" />
+                    <span className="text-[8px] font-bold uppercase tracking-widest">Secured Gateway</span>
                  </div>
               </div>
             </div>

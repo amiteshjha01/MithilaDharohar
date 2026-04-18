@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { IOrder } from '@/models/Order';
+import { User, Package, Clock, ArrowLeft, AlertCircle } from 'lucide-react';
+import LoadingSpinner from '@/components/LoadingSpinner';
 
 export default function AdminOrdersPage() {
   const router = useRouter();
@@ -17,12 +19,10 @@ export default function AdminOrdersPage() {
     const fetchOrders = async () => {
       try {
         const key = localStorage.getItem('adminKey');
-
         if (!key) {
           router.push('/admin/dashboard');
           return;
         }
-
         setAdminKey(key);
 
         const res = await fetch('/api/admin/orders', {
@@ -39,7 +39,7 @@ export default function AdminOrdersPage() {
         setOrders(data.data);
         setLoading(false);
       } catch (err) {
-        setError('Failed to load orders');
+        setError('Connection error fetching orders');
         setLoading(false);
       }
     };
@@ -50,7 +50,6 @@ export default function AdminOrdersPage() {
   const handleStatusChange = async (orderId: string, newStatus: string) => {
     try {
       setUpdatingOrderId(orderId);
-
       const res = await fetch('/api/admin/orders', {
         method: 'PUT',
         headers: {
@@ -72,163 +71,169 @@ export default function AdminOrdersPage() {
         setError('Failed to update order status');
       }
     } catch (err) {
-      setError('Failed to update order');
+      setError('Update connection error');
     } finally {
       setUpdatingOrderId('');
     }
   };
 
-  const getStatusStyle = (
-    status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled'
-  ) => {
-    const styles: Record<string, string> = {
-      pending: 'bg-yellow-50 text-yellow-700 border-yellow-100',
-      processing: 'bg-blue-50 text-blue-700 border-blue-100',
-      shipped: 'bg-purple-50 text-purple-700 border-purple-100',
-      delivered: 'bg-green-50 text-green-700 border-green-100',
-      cancelled: 'bg-red-50 text-red-700 border-red-100',
-    };
-    return styles[status] || 'bg-gray-50 text-gray-700 border-gray-100';
-  };
-
   if (loading) {
     return (
-      <main className="min-h-screen bg-secondary flex items-center justify-center p-6">
+      <main className="min-h-screen bg-secondary flex items-center justify-center">
         <div className="flex flex-col items-center gap-6">
-           <div className="w-16 h-16 border-4 border-primary/10 border-t-primary rounded-full animate-spin"></div>
-           <p className="text-[11px] font-black uppercase tracking-[0.4em] text-text-muted">Accessing Order Logs...</p>
+           <div className="w-10 h-10 border-2 border-primary/10 border-t-primary rounded-full animate-spin"></div>
+           <span className="label-text opacity-40">Loading Orders</span>
         </div>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-secondary">
+    <main className="min-h-screen bg-secondary pb-32 pt-28">
       {/* Header */}
-      <div className="bg-white border-b border-[#f0e6da] py-20">
-        <div className="max-w-[1400px] mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-8">
-          <div className="text-center md:text-left">
-            <Link href="/admin/dashboard" className="text-[10px] font-black uppercase tracking-[0.4em] text-primary mb-4 block hover:translate-x-[-4px] transition-transform">
-              ← Dashboard
-            </Link>
-            <h1 className="text-5xl font-bold text-text-main text-serif tracking-tight">Order fulfillment</h1>
-          </div>
-          <div className="text-right">
-             <span className="text-[10px] font-black uppercase tracking-[0.4em] text-text-muted">Total Volume</span>
-             <p className="text-3xl font-bold text-serif">{orders.length} Sacred Orders</p>
+      <section className="bg-heritage-bone border-b border-heritage-dark/5 py-12 md:py-16 mb-12">
+        <div className="container-sanctuary">
+          <div className="flex flex-col md:flex-row justify-between items-end gap-10">
+            <div className="space-y-6">
+               <Link href="/admin/dashboard" className="flex items-center gap-2 label-text text-primary hover:opacity-70 transition-opacity">
+                  <ArrowLeft className="w-3 h-3" /> Dashboard
+               </Link>
+               <h1 className="h1 lowercase first-letter:uppercase text-heritage-dark">
+                 Order <br /><span className="italic font-normal text-primary">Fulfillment.</span>
+               </h1>
+            </div>
+            <div className="text-right space-y-2">
+               <span className="label-text opacity-30">Total Orders</span>
+               <p className="text-2xl font-serif font-bold text-heritage-dark italic">{orders.length} Orders</p>
+            </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Orders List */}
-      <div className="max-w-[1400px] mx-auto px-6 py-16">
+      <div className="container-sanctuary">
         {error && (
-          <div className="bg-primary/5 border border-primary/10 text-primary px-8 py-4 rounded-2xl mb-10 text-xs font-bold uppercase tracking-widest">
-            {error}
+          <div className="bg-heritage-red/5 border border-heritage-red/10 text-heritage-red px-6 py-4 rounded-xl mb-12 flex items-center gap-4 text-[10px] font-bold uppercase tracking-widest">
+            <AlertCircle className="w-4 h-4" /> {error}
           </div>
         )}
 
         {orders.length === 0 ? (
-          <div className="bg-white rounded-[3rem] p-24 text-center border border-[#f0e6da] shadow-xl">
-            <p className="text-3xl font-bold text-serif text-text-muted">Awaiting Genesis Orders</p>
+          <div className="bg-white rounded-xl p-20 text-center border border-heritage-dark/5 space-y-4">
+             <Package className="w-12 h-12 text-heritage-dark/10 mx-auto" />
+             <p className="body-text text-lg opacity-40 italic">No orders yet.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-10">
+          <div className="space-y-10">
             {orders.map((order) => (
-              <div
-                key={order._id?.toString()}
-                className="bg-white rounded-[3rem] p-12 border border-[#f0e6da] shadow-2xl shadow-primary/5 group hover:shadow-primary/10 transition-all duration-700"
-              >
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 items-start">
-                  {/* Column 1: Identity */}
-                  <div className="space-y-6">
-                    <div>
-                      <span className="text-[10px] font-black uppercase tracking-[0.3em] text-text-muted mb-2 block">Reference</span>
-                      <p className="text-2xl font-bold text-text-main font-mono tracking-tighter">
-                        {order.orderId}
-                      </p>
+              <div key={order._id?.toString()} className="bg-white rounded-xl p-8 md:p-12 border border-heritage-dark/5 shadow-sm hover:shadow-md transition-all overflow-hidden relative">
+                <div className="absolute top-0 left-0 w-1 h-full bg-primary/20"></div>
+                
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+                  {/* Identity */}
+                  <div className="lg:col-span-3 space-y-8">
+                    <div className="space-y-1">
+                       <span className="label-text opacity-30">Order ID</span>
+                       <p className="text-lg font-bold text-heritage-dark tracking-widest uppercase">{order.orderId}</p>
                     </div>
-                    <div>
-                      <span className="text-[10px] font-black uppercase tracking-[0.3em] text-text-muted mb-2 block">Authorized By</span>
-                      <p className="font-bold text-text-main">
-                        {order.shippingAddress.name}
-                      </p>
-                      <p className="text-sm text-text-muted">{order.phoneNumber}</p>
+                    <div className="space-y-4">
+                       <div className="flex items-center gap-3 label-text opacity-30">
+                          <User className="w-3.5 h-3.5" /> Customer
+                       </div>
+                       <div className="space-y-1">
+                          <p className="text-sm font-bold text-heritage-dark">{order.shippingAddress?.name}</p>
+                          <p className="text-xs text-heritage-dark/50 italic">{order.phoneNumber}</p>
+                       </div>
                     </div>
                   </div>
 
-                  {/* Column 2: Financials & Status */}
-                  <div className="space-y-8">
-                    <div className="flex justify-between items-end border-b border-secondary pb-6">
-                      <div>
-                         <span className="text-[10px] font-black uppercase tracking-[0.3em] text-text-muted mb-2 block">Valuation</span>
-                         <p className="text-4xl font-bold text-text-main text-serif italic">₹{order.total.toFixed(0)}</p>
-                      </div>
-                      <div className="text-right">
-                         <span className="text-[10px] font-black uppercase tracking-[0.3em] text-text-muted mb-2 block">Deposit</span>
-                         <span className={`text-[11px] font-black uppercase tracking-widest px-4 py-1 rounded-full ${order.paymentStatus === 'paid' ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-red-50 text-red-700 border border-red-100'}`}>
-                           {order.paymentStatus}
-                         </span>
-                      </div>
+                  {/* Financials & Status */}
+                  <div className="lg:col-span-5 space-y-10">
+                    <div className="flex justify-between items-end border-b border-heritage-dark/5 pb-8">
+                       <div className="space-y-1">
+                          <span className="label-text opacity-30">Total</span>
+                          <p className="text-4xl font-serif font-bold text-heritage-dark italic tracking-tighter">
+                            &#8377;{(order.total ?? 0).toFixed(0)}
+                          </p>
+                       </div>
+                       <div className="text-right space-y-1">
+                          <span className="label-text opacity-30 mb-2 block">Payment</span>
+                          <span className={`px-4 py-1 rounded-full text-[9px] font-bold uppercase tracking-widest border ${
+                            order.paymentStatus === 'paid' ? 'bg-green-50 text-green-700 border-green-100' : 'bg-heritage-red/5 text-heritage-red border-heritage-red/10'
+                          }`}>
+                            {order.paymentStatus}
+                          </span>
+                       </div>
                     </div>
 
-                    <div className="p-6 bg-secondary/50 rounded-2xl flex items-center justify-between gap-6 border border-[#f0e6da]">
-                       <div className="flex items-center gap-4 text-[11px] font-black uppercase tracking-widest">
-                          <span className={`w-3 h-3 rounded-full animate-pulse ${order.status !== 'delivered' ? 'bg-primary' : 'bg-green-500'}`}></span>
+                    <div className="flex items-center justify-between gap-6 p-6 bg-heritage-bone/30 rounded-xl border border-heritage-dark/5">
+                       <div className="flex items-center gap-3 label-text text-heritage-dark/60">
+                          <div className={`w-2 h-2 rounded-full animate-pulse ${order.status !== 'delivered' ? 'bg-primary' : 'bg-green-500'}`}></div>
                           {order.status}
                        </div>
                        
                        {order.paymentStatus === 'paid' && order.status !== 'delivered' && (
-                          <select
-                            value={order.status}
-                            onChange={(e) => handleStatusChange(order.orderId, e.target.value)}
-                            disabled={updatingOrderId === order.orderId}
-                            className="bg-white border border-[#f0e6da] rounded-xl px-4 py-2 text-[10px] font-bold uppercase tracking-widest focus:ring-2 focus:ring-primary/20 outline-none cursor-pointer"
-                          >
-                            <option value="pending">Authorize</option>
-                            <option value="processing">Processing</option>
-                            <option value="shipped">Manifest</option>
-                            <option value="delivered">Complete</option>
-                            <option value="cancelled">Abort</option>
-                          </select>
+                          <div className="relative">
+                             {updatingOrderId === order.orderId ? (
+                               <LoadingSpinner className="w-5 h-5 border-primary/30 border-t-primary" />
+                             ) : (
+                               <select
+                                 value={order.status}
+                                 onChange={(e) => handleStatusChange(order.orderId, e.target.value)}
+                                 className="bg-white border border-heritage-dark/10 rounded-lg px-4 py-2 text-[10px] font-bold uppercase tracking-widest focus:ring-4 focus:ring-primary/5 outline-none cursor-pointer hover:border-primary transition-all"
+                               >
+                                 <option value="">Update Status</option>
+                                 <option value="processing">Processing</option>
+                                 <option value="shipped">Shipped</option>
+                                 <option value="delivered">Delivered</option>
+                                 <option value="cancelled">Cancelled</option>
+                               </select>
+                             )}
+                          </div>
                        )}
                     </div>
                   </div>
 
-                  {/* Column 3: Logistics */}
-                  <div className="p-8 bg-text-main text-white rounded-[2.5rem] relative overflow-hidden">
-                    <div className="relative z-10">
-                       <span className="text-[10px] font-black uppercase tracking-[0.4em] text-primary mb-6 block border-b border-white/10 pb-4">Sanctuary Address</span>
-                       <div className="text-xs space-y-2 opacity-80 leading-relaxed font-medium uppercase tracking-widest">
-                         <p>{order.shippingAddress.addressLine}</p>
-                         <p>{order.shippingAddress.city}, {order.shippingAddress.state} - {order.shippingAddress.pincode}</p>
-                         <p className="pt-2 text-primary font-black">{order.shippingAddress.mobile}</p>
+                  {/* Destination */}
+                  <div className="lg:col-span-4 bg-heritage-dark p-8 rounded-xl text-heritage-bone relative overflow-hidden">
+                    <div className="relative z-10 space-y-6">
+                       <span className="label-text text-primary border-b border-primary/20 pb-4 block">Shipping Address</span>
+                       <div className="space-y-2">
+                          <p className="text-xs font-medium uppercase tracking-widest opacity-70 leading-relaxed">
+                            {order.shippingAddress?.addressLine}<br />
+                            {order.shippingAddress?.city}, {order.shippingAddress?.state} - {order.shippingAddress?.pincode}
+                          </p>
+                          <p className="text-xs font-bold text-primary pt-2">{order.shippingAddress?.mobile}</p>
                        </div>
                     </div>
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 rounded-full blur-3xl -mr-16 -mt-16"></div>
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl -mr-16 -mt-16"></div>
                   </div>
                 </div>
 
-                {/* Bundle Overview */}
-                <div className="mt-12 pt-10 border-t border-secondary">
-                  <span className="text-[10px] font-black uppercase tracking-[0.3em] text-text-muted mb-6 block">Sacred Bundle Overview</span>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                     {order.items.map((item, idx) => (
-                        <div key={idx} className="flex justify-between items-center bg-secondary/30 p-4 rounded-xl">
-                           <span className="text-[11px] font-bold text-text-main uppercase tracking-widest truncate flex-1 pr-4">{item.name}</span>
-                           <span className="text-[10px] font-black text-primary">QTY {item.quantity}</span>
+                {/* Items */}
+                <div className="mt-12 pt-10 border-t border-heritage-dark/5 space-y-6">
+                  <div className="flex items-center gap-3 label-text opacity-30">
+                     <Package className="w-3.5 h-3.5" /> Order Items
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                     {(order.items ?? []).map((item, idx) => (
+                        <div key={idx} className="flex justify-between items-center bg-heritage-bone/30 p-4 rounded-lg border border-heritage-dark/5">
+                           <span className="text-[11px] font-bold text-heritage-dark uppercase tracking-widest truncate flex-1 pr-4">{item.name}</span>
+                           <span className="text-[10px] font-bold text-primary">QTY {item.quantity}</span>
                         </div>
                      ))}
                   </div>
                 </div>
 
-                {/* Footer Info */}
-                <div className="mt-12 flex flex-col md:flex-row justify-between items-center text-[9px] font-black uppercase tracking-[0.3em] text-text-muted border-t border-secondary pt-6">
+                {/* Footer */}
+                <div className="mt-12 pt-8 border-t border-heritage-dark/5 flex flex-col md:flex-row justify-between items-center gap-6 text-[9px] font-bold uppercase tracking-[0.3em] text-heritage-dark/20">
                    <div className="flex gap-8">
-                      <span>RXP: {order.razorpayOrderId}</span>
+                      <span>RZP: {order.razorpayOrderId}</span>
                       {order.razorpayPaymentId && <span>TXN: {order.razorpayPaymentId}</span>}
                    </div>
-                   <span>Genesis: {new Date(order.createdAt).toLocaleDateString()} • {new Date(order.createdAt).toLocaleTimeString()}</span>
+                   <div className="flex items-center gap-2">
+                      <Clock className="w-3 h-3" />
+                      <span>{new Date(order.createdAt).toLocaleString()}</span>
+                   </div>
                 </div>
               </div>
             ))}

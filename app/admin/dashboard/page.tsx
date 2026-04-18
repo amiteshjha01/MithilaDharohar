@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { Shield, Box, ShoppingCart, TrendingUp, AlertCircle, LogOut, ArrowRight, Package, ListChecks } from 'lucide-react';
 
 interface DashboardStats {
   totalProducts: number;
@@ -26,13 +27,11 @@ export default function AdminDashboard() {
     const fetchStats = async () => {
       try {
         const key = localStorage.getItem('adminKey');
-
         if (!key) {
           setShowKeyInput(true);
           setLoading(false);
           return;
         }
-
         setAdminKey(key);
 
         const [productsRes, ordersRes] = await Promise.all([
@@ -77,7 +76,7 @@ export default function AdminDashboard() {
 
         setLoading(false);
       } catch (err) {
-        setError('Heritage Synchronization Interrupted');
+        setError('Connection interrupted');
         setLoading(false);
       }
     };
@@ -94,46 +93,35 @@ export default function AdminDashboard() {
 
   if (showKeyInput) {
     return (
-      <main className="min-h-screen bg-secondary/50 flex items-center justify-center p-6">
-        <div className="bg-white rounded-[4rem] shadow-2xl shadow-primary/10 p-16 max-w-md w-full border border-[#f0e6da] relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-full h-3 bg-primary/20"></div>
-          
-          <div className="text-center mb-12">
-             <span className="text-[11px] font-black uppercase tracking-[0.5em] text-primary mb-6 block">Secure Gateway</span>
-             <h1 className="text-4xl font-black text-text-main text-serif leading-tight">
-               Artisan <br/> Sanctuary
-             </h1>
+      <main className="min-h-screen bg-secondary flex items-center justify-center p-6">
+        <div className="bg-white rounded-xl shadow-xl p-12 max-w-md w-full border border-heritage-dark/5 text-center space-y-8 animate-fade-up">
+          <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto border border-primary/20">
+             <Shield className="w-8 h-8 text-primary" />
+          </div>
+          <div className="space-y-2">
+             <span className="label-text text-primary">Admin Access</span>
+             <h1 className="text-2xl font-serif font-bold text-heritage-dark italic">Secured Login.</h1>
           </div>
 
-          <div className="space-y-8">
-            <div className="space-y-4">
-               <label className="text-[10px] font-black uppercase tracking-[0.3em] text-text-muted ml-1">Access Credential</label>
-               <input
-                 type="password"
-                 placeholder="••••••••••••"
-                 onKeyPress={(e) => {
-                   if (e.key === 'Enter') {
-                     handleSetKey((e.target as HTMLInputElement).value);
-                   }
-                 }}
-                 className="w-full px-8 py-5 bg-secondary border border-[#f0e6da] rounded-[2rem] focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all font-black tracking-[1em] text-center"
-               />
-            </div>
-
-            <button
-              onClick={() => {
-                const input = document.querySelector(
-                  'input[type="password"]'
-                ) as HTMLInputElement;
-                if (input) {
-                  handleSetKey(input.value);
-                }
-              }}
-              className="btn-premium-primary w-full !py-6 hover-glow !text-[12px]"
-            >
-              Authorize Entry
-            </button>
-            <p className="text-[9px] text-center text-text-muted font-bold uppercase tracking-[0.4em] opacity-40 italic">Reserved for Custodians of Heritage</p>
+          <div className="space-y-4">
+             <input
+               type="password"
+               placeholder="Enter admin key"
+               onKeyPress={(e) => {
+                 if (e.key === 'Enter') handleSetKey((e.target as HTMLInputElement).value);
+               }}
+               className="w-full px-6 py-4 bg-heritage-bone/50 border border-heritage-dark/5 rounded-xl focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all text-center font-bold tracking-[0.5em]"
+             />
+             <button
+               onClick={() => {
+                 const input = document.querySelector('input[type="password"]') as HTMLInputElement;
+                 if (input) handleSetKey(input.value);
+               }}
+               className="w-full btn-primary py-4"
+             >
+               Login to Dashboard
+             </button>
+             <p className="text-[10px] font-bold uppercase tracking-widest text-heritage-dark/30 italic">Restricted Admin Access</p>
           </div>
         </div>
       </main>
@@ -144,91 +132,92 @@ export default function AdminDashboard() {
     return (
       <main className="min-h-screen bg-secondary flex items-center justify-center">
         <div className="flex flex-col items-center gap-6">
-           <div className="w-16 h-16 border-4 border-primary/10 border-t-primary rounded-full animate-spin"></div>
-           <p className="text-[11px] font-black uppercase tracking-[0.4em] text-text-muted">Awakening Metrics...</p>
+           <div className="w-10 h-10 border-2 border-primary/10 border-t-primary rounded-full animate-spin"></div>
+           <span className="label-text opacity-40">Loading Dashboard</span>
         </div>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-secondary pb-32">
+    <main className="min-h-screen bg-secondary pb-32 pt-28">
       {/* Header */}
-      <div className="bg-white border-b border-[#f0e6da] py-24">
-        <div className="max-w-[1400px] mx-auto px-6 flex flex-col md:flex-row justify-between items-end gap-10">
-          <div className="text-center md:text-left">
-             <span className="text-[11px] font-black uppercase tracking-[0.6em] text-primary mb-6 block">Management Portal</span>
-             <h1 className="text-6xl md:text-8xl font-bold text-text-main text-serif tracking-tighter leading-none italic">Operational <br/> Overview</h1>
+      <section className="bg-heritage-bone border-b border-heritage-dark/5 py-12 md:py-16 mb-12">
+        <div className="container-sanctuary">
+          <div className="flex flex-col md:flex-row justify-between items-end gap-10">
+            <div className="space-y-6">
+               <span className="label-text text-primary">Control Center</span>
+               <h1 className="h1 lowercase first-letter:uppercase text-heritage-dark">
+                 Admin <br /><span className="italic font-normal text-primary">Dashboard.</span>
+               </h1>
+            </div>
+            <button
+              onClick={() => {
+                localStorage.removeItem('adminKey');
+                window.location.reload();
+              }}
+              className="flex items-center gap-2 label-text text-heritage-red hover:opacity-70 transition-opacity border-b-2 border-heritage-red/10 pb-2"
+            >
+              Terminate Session <LogOut className="w-3 h-3" />
+            </button>
           </div>
-          <button
-            onClick={() => {
-              localStorage.removeItem('adminKey');
-              window.location.reload();
-            }}
-            className="text-[10px] font-black uppercase tracking-[0.4em] text-primary border-b-2 border-primary/20 pb-2 hover:border-primary transition-all"
-          >
-            Terminal Access [EXIT]
-          </button>
         </div>
-      </div>
+      </section>
 
-      <div className="max-w-[1400px] mx-auto px-6 mt-20">
+      <div className="container-sanctuary">
         {error && (
-          <div className="bg-primary/5 border border-primary/10 text-primary px-10 py-6 rounded-[2.5rem] mb-12 flex items-center gap-6 animate-reveal text-xs font-bold uppercase tracking-widest">
-            {error}
+          <div className="bg-heritage-red/5 border border-heritage-red/10 text-heritage-red px-6 py-4 rounded-xl mb-12 flex items-center gap-4 text-[10px] font-bold uppercase tracking-widest">
+            <AlertCircle className="w-4 h-4" /> {error}
           </div>
         )}
 
         {/* Dynamic Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-20">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
           {[
-            { label: 'SACRED INVENTORY', value: stats.totalProducts, desc: 'Units in Sanctuary' },
-            { label: 'GLOBAL ORDERS', value: stats.totalOrders, desc: 'Total Heritage Passage' },
-            { label: 'ESTD. REVENUE', value: `₹${stats.totalRevenue.toLocaleString()}`, desc: 'Heritage Valuation' },
-            { label: 'PENDING ACTION', value: stats.pendingOrders, desc: 'Awaiting Validation', alert: stats.pendingOrders > 0 },
+            { icon: Box, label: 'Collection Size', value: stats.totalProducts, desc: 'Total Products' },
+            { icon: ShoppingCart, label: 'Order Volume', value: stats.totalOrders, desc: 'Total Orders' },
+            { icon: TrendingUp, label: 'Total Sales', value: `₹${stats.totalRevenue.toLocaleString()}`, desc: 'Estd. Revenue' },
+            { icon: AlertCircle, label: 'Action Required', value: stats.pendingOrders, desc: 'Pending Orders', alert: stats.pendingOrders > 0 },
           ].map((stat, i) => (
-            <div key={i} className={`bg-white rounded-[3.5rem] p-12 border border-[#f0e6da] transition-all duration-700 hover:shadow-2xl hover:-translate-y-3 ${stat.alert ? 'ring-2 ring-primary/20 bg-primary/5' : ''}`}>
-               <span className="text-[10px] font-black uppercase tracking-[0.3em] text-text-muted mb-6 block">{stat.label}</span>
-               <p className={`text-5xl font-bold text-serif mb-4 ${stat.alert ? 'text-primary' : 'text-text-main'}`}>{stat.value}</p>
-               <p className="text-[10px] font-bold text-text-muted uppercase tracking-widest opacity-60">{stat.desc}</p>
+            <div key={i} className={`bg-white rounded-xl p-8 border border-heritage-dark/5 shadow-sm transition-all hover:shadow-md ${stat.alert ? 'ring-2 ring-primary/20 bg-primary/5' : ''}`}>
+               <div className="flex justify-between items-start mb-6">
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${stat.alert ? 'bg-primary/20 text-primary' : 'bg-heritage-bone text-heritage-dark/40'}`}>
+                     <stat.icon className="w-5 h-5" />
+                  </div>
+               </div>
+               <span className="label-text opacity-40 block mb-2">{stat.label}</span>
+               <p className={`text-3xl font-bold font-serif italic ${stat.alert ? 'text-primary' : 'text-heritage-dark'}`}>{stat.value}</p>
+               <p className="text-[10px] font-bold text-heritage-dark/30 uppercase tracking-widest mt-2">{stat.desc}</p>
             </div>
           ))}
         </div>
 
         {/* Action Gateways */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-          <Link
-            href="/admin/products"
-            className="group bg-white rounded-[4rem] p-16 border border-[#f0e6da] hover:border-primary/30 transition-all duration-700 shadow-xl shadow-primary/5 hover:shadow-2xl flex flex-col items-start relative overflow-hidden"
-          >
-            <div className="w-20 h-20 rounded-[2.5rem] bg-secondary flex items-center justify-center mb-10 group-hover:scale-110 group-hover:bg-primary group-hover:text-white transition-all duration-500">
-               <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
-            </div>
-            <h2 className="text-4xl font-bold text-text-main text-serif mb-6 italic leading-tight">Master Catalog</h2>
-            <p className="text-text-muted text-lg font-medium mb-12 leading-relaxed max-w-sm">
-              Manage the 2,500-year legacy. Update pricing, curate collections, and monitor artisan stock in real-time.
-            </p>
-            <span className="flex items-center gap-4 text-[11px] font-black uppercase tracking-[0.4em] text-primary group-hover:translate-x-4 transition-all">
-               OPEN INVENTORY <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
-            </span>
-            <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -mr-32 -mt-32 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+          <Link href="/admin/products" className="group bg-white rounded-xl p-10 md:p-16 border border-heritage-dark/5 hover:border-primary/20 transition-all shadow-sm hover:shadow-xl flex flex-col items-start relative overflow-hidden">
+             <div className="w-12 h-12 rounded-xl bg-heritage-bone flex items-center justify-center mb-8 group-hover:bg-primary group-hover:text-white transition-all">
+                <Package className="w-6 h-6" />
+             </div>
+             <h2 className="text-2xl font-serif font-bold text-heritage-dark mb-4 italic">Product Management</h2>
+             <p className="body-text text-sm opacity-60 mb-10 max-w-sm">
+                Manage the Mithila collection. Update inventory, pricing, and curate artisan products.
+             </p>
+             <span className="flex items-center gap-3 label-text text-primary group-hover:translate-x-2 transition-transform">
+                Explore Catalog <ArrowRight className="w-4 h-4" />
+             </span>
           </Link>
 
-          <Link
-            href="/admin/orders"
-            className="group bg-text-main text-white rounded-[4rem] p-16 border border-white/5 hover:border-primary/30 transition-all duration-700 shadow-2xl flex flex-col items-start relative overflow-hidden"
-          >
-            <div className="w-20 h-20 rounded-[2.5rem] bg-white/5 flex items-center justify-center mb-10 group-hover:scale-110 group-hover:bg-primary group-hover:text-white transition-all duration-500">
-               <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
-            </div>
-            <h2 className="text-4xl font-bold text-serif mb-6 italic leading-tight">Fulfillment Gateway</h2>
-            <p className="opacity-60 text-lg font-medium mb-12 leading-relaxed max-w-sm">
-              Track the sacred passage of goods. Validate transactions, authorize shipments, and monitor customer outreach.
-            </p>
-            <span className="flex items-center gap-4 text-[11px] font-black uppercase tracking-[0.4em] text-primary group-hover:translate-x-4 transition-all">
-               OPEN COMMAND <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
-            </span>
-            <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl -mr-32 -mt-32 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+          <Link href="/admin/orders" className="group bg-heritage-dark rounded-xl p-10 md:p-16 border border-white/5 hover:border-primary/20 transition-all shadow-xl flex flex-col items-start relative overflow-hidden text-white">
+             <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center mb-8 group-hover:bg-primary transition-all">
+                <ListChecks className="w-6 h-6" />
+             </div>
+             <h2 className="text-2xl font-serif font-bold text-heritage-bone mb-4 italic">Order Fulfillment</h2>
+             <p className="text-heritage-bone/60 text-sm mb-10 max-w-sm">
+                Manage order processing and shipping. Update status, verify details, and ensure artisan delivery.
+             </p>
+             <span className="flex items-center gap-3 label-text text-primary group-hover:translate-x-2 transition-transform">
+                View Orders <ArrowRight className="w-4 h-4" />
+             </span>
           </Link>
         </div>
       </div>

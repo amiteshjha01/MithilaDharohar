@@ -3,6 +3,7 @@ import mongoose, { Schema, Document } from 'mongoose';
 export interface IOrderItem {
   productId: string;
   name: string;
+  variantName?: string;
   price: number;
   quantity: number;
 }
@@ -67,6 +68,7 @@ const OrderItemSchema = new Schema({
     type: String,
     required: true,
   },
+  variantName: String,
   price: {
     type: Number,
     required: true,

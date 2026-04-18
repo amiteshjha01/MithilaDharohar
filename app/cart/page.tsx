@@ -5,88 +5,123 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { getEffectivePrice } from '@/lib/helpers';
+import { Trash2, Plus, Minus, ShieldCheck, Truck, ShoppingBag, ArrowLeft, Heart, Lock, Zap, ChevronRight } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function CartPage() {
   const router = useRouter();
   const [cartItems, setCartItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [couponCode, setCouponCode] = useState('');
+  const [couponData, setCouponData] = useState<any>(null);
+  const [validating, setValidating] = useState(false);
 
   useEffect(() => {
     const fetchCartDetails = async () => {
       try {
         const cart = JSON.parse(localStorage.getItem('cart') || '{"items":[]}');
-
-        if (cart.items.length === 0) {
+        if (!cart.items || cart.items.length === 0) {
           setCartItems([]);
           setLoading(false);
           return;
         }
-
         const res = await fetch(`/api/products?category=all`);
         const data = await res.json();
-        
-        const products = cart.items.map((item: any) => {
-           const product = data.data?.find((p: any) => p._id.toString() === item.productId.toString());
-           return product ? { ...product, cartQuantity: item.quantity } : null;
+        const products = cart.items.map((cartItem: any) => {
+           const product = data.data?.find((p: any) => String(p._id) === String(cartItem.productId));
+           if (!product) return null;
+           let finalBasePrice = product.price;
+           if (cartItem.variantName && product.variants) {
+              const variant = product.variants.find((v: any) => v.name === cartItem.variantName);
+              if (variant) finalBasePrice = variant.price;
+           }
+           return { 
+              ...product, 
+              cartQuantity: cartItem.quantity, 
+              selectedVariantName: cartItem.variantName,
+              effectiveBasePrice: finalBasePrice 
+           };
         }).filter(Boolean);
-
         setCartItems(products);
       } catch (err) {
-        setError('Failed to load your heritage selection');
+        toast.error('Failed to load your heritage selection');
       } finally {
-        setLoading(false);
+        setTimeout(() => setLoading(false), 250);
       }
     };
-
     fetchCartDetails();
+    const savedCoupon = localStorage.getItem('appliedCoupon');
+    if (savedCoupon) setCouponCode(savedCoupon);
   }, []);
 
-  const updateQuantity = (productId: string, newQuantity: number) => {
-    const cart = JSON.parse(localStorage.getItem('cart') || '{"items":[]}');
-    const item = cart.items.find((i: any) => String(i.productId) === String(productId));
-
-    if (item) {
-      if (newQuantity <= 0) {
-        cart.items = cart.items.filter((i: any) => i.productId !== productId);
+  const handleApplyCoupon = async () => {
+    if (!couponCode) return;
+    setValidating(true);
+    try {
+      const cart = JSON.parse(localStorage.getItem('cart') || '{"items":[]}');
+      const res = await fetch('/api/validate-coupon', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items: cart.items, couponCode })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setCouponData(data.data);
+        localStorage.setItem('appliedCoupon', couponCode);
+        toast.success(`Authentic Code Applied: ${couponCode}`);
       } else {
-        item.quantity = newQuantity;
+        setCouponData(null);
+        toast.error(data.error || 'Invalid heritage code');
       }
-    }
-
-    localStorage.setItem('cart', JSON.stringify(cart));
-    
-    // Dispatch custom event for CartBadge
-    window.dispatchEvent(new Event('cart-updated'));
-    
-    if (newQuantity <= 0) {
-      setCartItems(prev => prev.filter(p => String(p._id) !== String(productId)));
-      // window.location.reload(); // Removing reload for smoother UX
-    } else {
-      setCartItems(prev => prev.map(p => String(p._id) === String(productId) ? { ...p, cartQuantity: newQuantity } : p));
+    } catch (err) {
+      toast.error('Validation system busy');
+    } finally {
+      setValidating(false);
     }
   };
 
-  const subtotal = cartItems.reduce((sum, p) => sum + getEffectivePrice(p.price, p.discount) * p.cartQuantity, 0);
+  const updateQuantity = (productId: string, variantName: string | null, newQuantity: number) => {
+    const cart = JSON.parse(localStorage.getItem('cart') || '{"items":[]}');
+    const items = cart.items || [];
+    const itemIdx = items.findIndex((i: any) => 
+      String(i.productId) === String(productId) && 
+      i.variantName === (variantName || null)
+    );
+    if (itemIdx > -1) {
+      if (newQuantity <= 0) {
+        items.splice(itemIdx, 1);
+        setCartItems(prev => prev.filter((p) => !(String(p._id) === String(productId) && p.selectedVariantName === variantName)));
+        toast.info('Item removed from selection');
+      } else {
+        items[itemIdx].quantity = newQuantity;
+        setCartItems(prev => prev.map(p => (String(p._id) === String(productId) && p.selectedVariantName === variantName) ? { ...p, cartQuantity: newQuantity } : p));
+      }
+    }
+    cart.items = items;
+    localStorage.setItem('cart', JSON.stringify(cart));
+    window.dispatchEvent(new Event('cart-updated'));
+  };
+
+  const subtotal = cartItems.reduce((sum, p) => sum + getEffectivePrice(p.effectiveBasePrice, p.discount) * p.cartQuantity, 0);
   const deliveryCharge = subtotal >= 999 ? 0 : 99;
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-secondary flex items-center justify-center p-6">
-        <div className="flex flex-col items-center gap-6">
-           <div className="w-16 h-16 border-4 border-primary/10 border-t-primary rounded-full animate-spin"></div>
-           <p className="text-[10px] font-bold uppercase tracking-[0.4em] text-heritage-muted">Curating Your Selection...</p>
-        </div>
+      <main className="min-h-screen bg-secondary flex items-center justify-center">
+        <div className="w-10 h-10 border-2 border-primary/10 border-t-primary rounded-full animate-spin"></div>
       </main>
     );
   }
 
   if (cartItems.length === 0) {
     return (
-      <main className="min-h-screen bg-secondary flex flex-col items-center justify-center p-6 text-center">
-        <span className="text-[10px] font-bold uppercase tracking-[0.6em] text-primary mb-12 block animate-fade-up">Bag is Empty</span>
-        <h1 className="text-5xl md:text-8xl font-serif font-bold text-heritage-dark mb-16 animate-fade-up">Start Your <br/> <span className="italic font-normal">Journey.</span></h1>
-        <Link href="/products" className="btn-boutique btn-boutique-primary !px-16 animate-fade-up">
+      <main className="min-h-screen bg-secondary flex flex-col items-center justify-center p-6 text-center gap-8">
+        <div className="w-32 h-32 bg-primary/5 rounded-full flex items-center justify-center animate-pulse">
+           <ShoppingBag className="w-12 h-12 text-primary opacity-30" />
+        </div>
+        <h1 className="h1 lowercase first-letter:uppercase text-heritage-dark">Your manifest <br/><span className="italic font-normal text-primary">is empty.</span></h1>
+        <p className="body-text max-w-sm">Start your journey through our authentic Mithila collections and preserve ancient legacies.</p>
+        <Link href="/products" className="btn-primary">
            Explore The Boutique
         </Link>
       </main>
@@ -94,72 +129,61 @@ export default function CartPage() {
   }
 
   return (
-    <main className="min-h-screen bg-secondary pb-40">
-      {/* Editorial Header */}
-      <div className="bg-heritage-bone border-b border-primary/5 py-24 md:py-32">
-        <div className="container-editorial">
-           <span className="text-[10px] font-bold uppercase tracking-[0.6em] text-primary mb-6 block animate-fade-up">Review Selection</span>
-           <h1 className="text-5xl md:text-9xl font-serif font-bold text-heritage-dark tracking-tighter animate-fade-up">Shopping Bag</h1>
+    <main className="min-h-screen bg-secondary pb-32 pt-28">
+      <div className="bg-heritage-bone border-b border-heritage-dark/5 py-12 md:py-20 mb-12">
+        <div className="container-sanctuary">
+           <div className="mb-6">
+              <Link href="/products" className="group flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-heritage-dark/60 hover:text-primary transition-colors">
+                <ArrowLeft className="w-4 h-4" /> Continue Discovery
+              </Link>
+           </div>
+           <h1 className="h1 lowercase first-letter:uppercase text-heritage-dark">Selected <span className="italic font-normal text-primary">Manifest.</span></h1>
         </div>
       </div>
 
-      <div className="container-editorial mt-16 md:mt-24">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 md:gap-32 items-start">
-          {/* Cart Items */}
-          <div className="lg:col-span-8 space-y-16">
+      <div className="container-sanctuary">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20 items-start">
+          
+          {/* Cart Items List */}
+          <div className="lg:col-span-8 space-y-6">
+            <div className="flex items-center gap-4 py-4 border-b border-heritage-dark/5">
+                <span className="label-text">{cartItems.length} Masterpieces in Manifest</span>
+                <div className="h-px flex-grow bg-heritage-dark/5"></div>
+            </div>
+
             {cartItems.map((product, idx) => {
-              const effectivePrice = getEffectivePrice(product.price, product.discount);
+              const price = getEffectivePrice(product.effectiveBasePrice, product.discount);
               return (
-                <div key={product._id} className="group flex flex-col md:flex-row gap-10 md:gap-14 pb-16 border-b border-primary/10 last:border-0 relative animate-fade-up" style={{ animationDelay: `${idx * 0.1}s` }}>
-                  {/* Image Product */}
-                  <div className="w-full md:w-64 aspect-[4/5] relative rounded-[3rem] overflow-hidden shadow-2xl">
-                    <Image
-                      src={product.images?.[0] || '/placeholder.png'}
-                      alt={product.name}
-                      fill
-                      className="object-cover transition-transform duration-[2s] group-hover:scale-110"
-                    />
+                <div key={`${product._id}-${product.selectedVariantName || idx}`} className="bg-white rounded-xl p-6 border border-heritage-dark/5 shadow-sm flex flex-col md:flex-row gap-8 items-center group transition-all">
+                  <div className="w-32 h-32 md:w-40 md:h-40 relative rounded-lg overflow-hidden bg-heritage-bone flex-shrink-0 border border-heritage-dark/5">
+                    <Image src={product.images?.[0] || '/placeholder.jpg'} alt={product.name} fill className="object-cover transition-transform duration-[2s] group-hover:scale-110" />
                   </div>
 
-                  {/* Details Dossier */}
-                  <div className="flex-1 flex flex-col pt-4">
-                    <div className="flex justify-between items-start gap-4 mb-4">
-                       <span className="text-[10px] font-bold uppercase tracking-[0.4em] text-primary">{product.category}</span>
-                       <button 
-                          onClick={() => updateQuantity(product._id, 0)}
-                          className="text-[9px] font-bold uppercase tracking-widest text-heritage-muted hover:text-primary transition-colors border-b border-transparent hover:border-primary pb-1"
-                       >
-                         Remove
+                  <div className="flex-1 space-y-4 w-full">
+                    <div className="flex justify-between items-start gap-4">
+                       <div className="space-y-1">
+                          <span className="text-[9px] font-bold uppercase tracking-widest text-primary">{product.category}</span>
+                          <h3 className="text-xl font-bold text-heritage-dark">{product.name}</h3>
+                          {product.selectedVariantName && (
+                             <div className="flex items-center gap-2 text-[9px] font-bold uppercase tracking-widest text-heritage-dark/60">
+                                <Zap className="w-3 h-3 text-primary fill-primary/20" /> Variety: {product.selectedVariantName}
+                             </div>
+                          )}
+                       </div>
+                       <button onClick={() => updateQuantity(product._id, product.selectedVariantName, 0)} className="p-2 text-heritage-dark/30 hover:text-heritage-red transition-all">
+                          <Trash2 className="w-5 h-5" />
                        </button>
                     </div>
-                    
-                    <Link href={`/products/${product.slug}`} className="text-3xl md:text-4xl font-serif font-bold text-heritage-dark mb-8 hover:text-primary transition-colors">
-                       {product.name}
-                    </Link>
 
-                    <div className="mt-auto flex flex-wrap items-end justify-between gap-8 pt-8 border-t border-primary/5">
-                       {/* High-end Quantity Selector */}
-                       <div className="flex items-center gap-10 border border-primary/10 px-8 py-3 rounded-full bg-white/50 backdrop-blur-sm shadow-sm transition-all hover:border-primary/30">
-                          <button 
-                             onClick={() => updateQuantity(product._id, product.cartQuantity - 1)}
-                             className="text-xl font-light text-heritage-muted hover:text-primary transition-all p-1"
-                          >
-                            −
-                          </button>
-                          <span className="text-[14px] font-bold w-6 text-center text-heritage-dark">{product.cartQuantity}</span>
-                          <button 
-                             onClick={() => updateQuantity(product._id, product.cartQuantity + 1)}
-                             className="text-xl font-light text-heritage-muted hover:text-primary transition-all p-1"
-                          >
-                            +
-                          </button>
+                    <div className="flex flex-col md:flex-row items-center justify-between gap-6 pt-4 border-t border-heritage-dark/5">
+                       <div className="flex items-center gap-8 bg-heritage-bone px-6 py-2 rounded-lg border border-heritage-dark/5">
+                          <button onClick={() => updateQuantity(product._id, product.selectedVariantName, product.cartQuantity - 1)} className="text-xl font-light text-heritage-dark/40 hover:text-primary disabled:opacity-10" disabled={product.cartQuantity <= 1}>−</button>
+                          <span className="font-bold text-heritage-dark">{product.cartQuantity}</span>
+                          <button onClick={() => updateQuantity(product._id, product.selectedVariantName, product.cartQuantity + 1)} className="text-xl font-light text-heritage-dark/40 hover:text-primary">+</button>
                        </div>
-
                        <div className="text-right">
-                          <div className="flex items-baseline gap-4 justify-end">
-                             <span className="text-3xl font-serif font-bold text-heritage-dark tracking-tighter">₹{(effectivePrice * product.cartQuantity).toFixed(0)}</span>
-                          </div>
-                          <span className="text-[10px] font-bold text-heritage-muted uppercase tracking-widest opacity-60">₹{effectivePrice} boutique price</span>
+                          <p className="text-xl font-bold text-heritage-dark">₹{(price * product.cartQuantity).toFixed(0)}</p>
+                          <p className="text-[9px] font-bold text-heritage-dark/20 uppercase tracking-widest italic">Unit Auth: ₹{price}</p>
                        </div>
                     </div>
                   </div>
@@ -168,38 +192,78 @@ export default function CartPage() {
             })}
           </div>
 
-          {/* Boutique Receipt Summary */}
-          <div className="lg:col-span-4 lg:sticky lg:top-40">
-            <div className="bg-heritage-bone border border-primary/5 rounded-[4rem] p-12 shadow-3xl">
-              <h2 className="text-[11px] font-bold uppercase tracking-[0.4em] text-primary mb-12 pb-8 border-b border-primary/10">The Summary</h2>
+          {/* Pricing Summary Sidebar */}
+          <div className="lg:col-span-4 space-y-8">
+            <div className="bg-white rounded-xl p-8 border border-heritage-dark/5 shadow-md space-y-8">
+              <h2 className="label-text pb-4 border-b border-heritage-dark/5">Price Manifest Summary</h2>
 
-              <div className="space-y-8 mb-12 pb-12 border-b border-primary/10">
-                <div className="flex justify-between items-center text-[12px] font-bold text-heritage-muted">
-                  <span className="uppercase tracking-[0.2em]">Heritage Subtotal</span>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-widest text-heritage-dark/40">
+                  <span>Manifest Subtotal</span>
                   <span className="text-heritage-dark">₹{subtotal.toFixed(0)}</span>
                 </div>
-                <div className="flex justify-between items-center text-[12px] font-bold text-heritage-muted">
-                  <span className="uppercase tracking-[0.2em]">Boutique Delivery</span>
-                  <span>{deliveryCharge === 0 ? <span className="text-heritage-dark italic font-serif opacity-80">Complimentary</span> : `₹${deliveryCharge}`}</span>
+                
+                {couponData && couponData.discount > 0 && (
+                  <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-widest text-primary">
+                    <div className="flex items-center gap-2">
+                       <span>Authentic Discount</span>
+                       <button onClick={() => { setCouponData(null); setCouponCode(''); localStorage.removeItem('appliedCoupon'); }} className="text-[8px] underline opacity-50 hover:opacity-100">(Remove)</button>
+                    </div>
+                    <span>-₹{couponData.discount.toFixed(0)}</span>
+                  </div>
+                )}
+
+                <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-widest text-heritage-dark/40">
+                  <span>Heritage Passage</span>
+                  <span className={`${(couponData ? couponData.deliveryCharge : deliveryCharge) === 0 ? 'text-primary' : 'text-heritage-dark'}`}>
+                    {(couponData ? couponData.deliveryCharge : deliveryCharge) === 0 ? 'Complimentary' : `₹${couponData ? couponData.deliveryCharge : deliveryCharge}`}
+                  </span>
                 </div>
               </div>
 
-              <div className="flex justify-between items-end mb-16">
-                <span className="text-[10px] font-bold uppercase tracking-[0.4em] text-heritage-dark opacity-60">Estimated Total</span>
-                <span className="text-4xl font-serif font-bold text-heritage-dark tracking-tighter italic">₹{(subtotal + deliveryCharge).toFixed(0)}</span>
+              {/* Promo Code Input */}
+              {!couponData && (
+                <div className="space-y-3 pt-6 border-t border-heritage-dark/5">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-heritage-dark/40">Heritage Promo Code</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={couponCode}
+                      onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                      placeholder="E.G. MITHILA10"
+                      className="flex-1 bg-heritage-bone border border-heritage-dark/10 rounded px-3 py-2 text-xs uppercase tracking-widest focus:border-primary outline-none transition-all"
+                    />
+                    <button
+                      onClick={handleApplyCoupon}
+                      disabled={validating || !couponCode}
+                      className="bg-heritage-dark text-white px-4 py-2 rounded text-[10px] font-bold uppercase tracking-widest hover:bg-primary transition-all disabled:opacity-20"
+                    >
+                      {validating ? '...' : 'Apply'}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex flex-col gap-2 pt-6 border-t border-heritage-dark/5 text-right">
+                <span className="label-text">Final Manifest Total</span>
+                <span className="text-4xl md:text-5xl font-bold text-heritage-dark">₹{(couponData ? couponData.total : (subtotal + deliveryCharge)).toFixed(0)}</span>
               </div>
 
-              <button
-                onClick={() => router.push('/checkout')}
-                className="btn-boutique btn-boutique-primary w-full shadow-3xl !py-6 !text-[12px]"
+              <button 
+                onClick={() => router.push('/checkout')} 
+                className="w-full btn-primary py-5 rounded-lg flex items-center justify-center gap-3"
               >
-                Proceed to Sanctuary
+                Purchase Manifest <ChevronRight className="w-5 h-5" />
               </button>
 
-              <div className="mt-12 flex flex-col items-center gap-6">
-                 <div className="flex items-center gap-4 text-[9px] font-bold uppercase tracking-[0.3em] text-heritage-muted opacity-50">
-                    <svg className="w-5 h-5 text-heritage-dark/20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-                    Secure Heritage Acquisition
+              <div className="grid grid-cols-2 gap-4 pt-8 border-t border-heritage-dark/5 opacity-30">
+                 <div className="flex flex-col items-center gap-3 text-center">
+                    <Lock className="w-4 h-4 text-heritage-dark" />
+                    <span className="text-[8px] font-bold uppercase tracking-widest">SSL Verified</span>
+                 </div>
+                 <div className="flex flex-col items-center gap-3 text-center">
+                    <Truck className="w-4 h-4 text-heritage-dark" />
+                    <span className="text-[8px] font-bold uppercase tracking-widest">Artisan Courier</span>
                  </div>
               </div>
             </div>
@@ -209,4 +273,3 @@ export default function CartPage() {
     </main>
   );
 }
-

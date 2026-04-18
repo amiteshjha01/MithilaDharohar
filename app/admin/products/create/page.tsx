@@ -3,12 +3,13 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { ArrowLeft, Save, Plus, X, Image as ImageIcon, Info, Tag, IndianRupee, Package, ShieldCheck, AlertCircle } from 'lucide-react';
+import LoadingSpinner from '@/components/LoadingSpinner';
 
 export default function CreateProductPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [adminKey, setAdminKey] = useState('');
 
   const [formData, setFormData] = useState({
     name: '',
@@ -67,7 +68,6 @@ export default function CreateProductPage() {
 
     try {
       const key = localStorage.getItem('adminKey');
-
       if (!key) {
         router.push('/admin/dashboard');
         return;
@@ -111,263 +111,258 @@ export default function CreateProductPage() {
 
       if (!res.ok) {
         const data = await res.json();
-        setError(data.error || 'Failed to create product');
+        setError(data.error || 'Failed to create heritage piece');
         setLoading(false);
         return;
       }
 
       router.push('/admin/products');
     } catch (err) {
-      setError('An error occurred. Please try again.');
-      console.error(err);
+      setError('Connection error during manifest creation');
       setLoading(false);
     }
   };
 
   return (
-    <main className="min-h-screen bg-gray-50">
+    <main className="min-h-screen bg-secondary pb-32 pt-28">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-4xl mx-auto px-4 py-6">
-          <Link
-            href="/admin/products"
-            className="text-blue-600 hover:text-blue-800 text-sm mb-2 block"
-          >
-            ← Back to Products
-          </Link>
-          <h1 className="text-3xl font-bold text-gray-900">Create Product</h1>
-        </div>
-      </div>
-
-      {/* Form */}
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
-            {error}
+      <section className="bg-heritage-bone border-b border-heritage-dark/5 py-12 md:py-16 mb-12">
+        <div className="container-sanctuary">
+          <div className="flex flex-col md:flex-row justify-between items-end gap-10">
+            <div className="space-y-6">
+               <Link href="/admin/products" className="flex items-center gap-2 label-text text-primary hover:opacity-70 transition-opacity">
+                  <ArrowLeft className="w-3 h-3" /> Catalog
+               </Link>
+               <h1 className="h1 lowercase first-letter:uppercase text-heritage-dark">
+                 Create <br /><span className="italic font-normal text-primary">Artifact.</span>
+               </h1>
+            </div>
           </div>
-        )}
+        </div>
+      </section>
 
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Basic Info */}
-            <div className="space-y-4">
-              <h2 className="text-lg font-bold text-gray-900">Basic Information</h2>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Product Name
-                </label>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Category
-                  </label>
-                  <select
-                    name="category"
-                    value={formData.category}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="food">Food</option>
-                    <option value="clothing">Clothing</option>
-                    <option value="craft">Craft</option>
-                    <option value="festive">Festive</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Price (₹)
-                  </label>
-                  <input
-                    type="number"
-                    name="price"
-                    value={formData.price}
-                    onChange={handleInputChange}
-                    step="0.01"
-                    required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Description
-                </label>
-                <textarea
-                  name="description"
-                  value={formData.description}
-                  onChange={handleInputChange}
-                  rows={4}
-                  required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
+      <div className="container-sanctuary">
+        <div className="max-w-4xl mx-auto">
+          <div className="bg-white rounded-xl shadow-sm border border-heritage-dark/5 overflow-hidden animate-fade-up">
+            <div className="bg-heritage-dark px-10 py-6 border-b border-white/5">
+              <span className="label-text text-primary">Genesis Editor</span>
+              <p className="body-text text-white/50 text-xs mt-1 italic">Initiate a new heritage entry into the sanctuary catalog.</p>
             </div>
 
-            {/* Stock & Availability */}
-            <div className="space-y-4 pt-6 border-t">
-              <h2 className="text-lg font-bold text-gray-900">Stock & Availability</h2>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Stock Quantity
-                  </label>
-                  <input
-                    type="number"
-                    name="stockQuantity"
-                    value={formData.stockQuantity}
-                    onChange={handleInputChange}
-                    min="0"
-                    required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
+            <form onSubmit={handleSubmit} className="p-10 md:p-16 space-y-16">
+              {error && (
+                <div className="bg-heritage-red/5 border border-heritage-red/10 text-heritage-red px-6 py-4 rounded-xl flex items-center gap-4 text-[10px] font-bold uppercase tracking-widest">
+                  <AlertCircle className="w-4 h-4" /> {error}
                 </div>
+              )}
 
-                <div className="flex items-end">
-                  <label className="flex items-center gap-2 cursor-pointer">
+              {/* Section: Basic Info */}
+              <div className="space-y-8">
+                <div className="flex items-center gap-3 label-text opacity-30">
+                   <Info className="w-3.5 h-3.5" /> Basic Information
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-heritage-dark/40 uppercase tracking-widest ml-1">Artifact Name</label>
                     <input
-                      type="checkbox"
-                      name="inStock"
-                      checked={formData.inStock}
+                      type="text"
+                      name="name"
+                      required
+                      value={formData.name}
                       onChange={handleInputChange}
-                      className="w-4 h-4 rounded border-gray-300"
+                      className="w-full px-6 py-4 bg-heritage-bone/30 border border-heritage-dark/5 rounded-xl focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all text-sm font-medium"
                     />
-                    <span className="text-sm font-medium text-gray-700">
-                      In Stock
-                    </span>
-                  </label>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-heritage-dark/40 uppercase tracking-widest ml-1">Archive Category</label>
+                    <select
+                      name="category"
+                      value={formData.category}
+                      onChange={handleInputChange}
+                      className="w-full px-6 py-4 bg-heritage-bone/30 border border-heritage-dark/5 rounded-xl focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all text-sm font-medium cursor-pointer"
+                    >
+                      <option value="food">Artisan Food</option>
+                      <option value="clothing">Heritage Clothing</option>
+                      <option value="craft">Madhubani Crafts</option>
+                      <option value="festive">Festival Sanctuary</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-heritage-dark/40 uppercase tracking-widest ml-1">Narrative Description</label>
+                  <textarea
+                    name="description"
+                    required
+                    rows={5}
+                    value={formData.description}
+                    onChange={handleInputChange}
+                    className="w-full px-6 py-4 bg-heritage-bone/30 border border-heritage-dark/5 rounded-xl focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all text-sm font-medium leading-relaxed"
+                  ></textarea>
                 </div>
               </div>
-            </div>
 
-            {/* Discount */}
-            <div className="space-y-4 pt-6 border-t">
-              <h2 className="text-lg font-bold text-gray-900">Discount (Optional)</h2>
+              {/* Section: Stock & Financials */}
+              <div className="space-y-8">
+                 <div className="flex items-center gap-3 label-text opacity-30">
+                    <Tag className="w-3.5 h-3.5" /> Manifest Details
+                 </div>
+                 
+                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div className="space-y-2 md:col-span-1">
+                      <label className="text-[10px] font-bold text-heritage-dark/40 uppercase tracking-widest ml-1">Base Valuation (₹)</label>
+                      <div className="relative">
+                        <IndianRupee className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-heritage-dark/20" />
+                        <input
+                          type="number"
+                          name="price"
+                          required
+                          min="0"
+                          value={formData.price}
+                          onChange={handleInputChange}
+                          className="w-full pl-14 pr-6 py-4 bg-heritage-bone/30 border border-heritage-dark/5 rounded-xl focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all text-sm font-medium font-serif italic"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2 md:col-span-1">
+                      <label className="text-[10px] font-bold text-heritage-dark/40 uppercase tracking-widest ml-1">Inventory Count</label>
+                      <input
+                        type="number"
+                        name="stockQuantity"
+                        required
+                        min="0"
+                        value={formData.stockQuantity}
+                        onChange={handleInputChange}
+                        className="w-full px-6 py-4 bg-heritage-bone/30 border border-heritage-dark/5 rounded-xl focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all text-sm font-medium"
+                      />
+                    </div>
+                    <div className="flex items-end pb-4 md:col-span-1">
+                      <label className="flex items-center gap-4 cursor-pointer group">
+                        <div className="relative">
+                          <input
+                            type="checkbox"
+                            name="inStock"
+                            checked={formData.inStock}
+                            onChange={(e) => setFormData(prev => ({ ...prev, inStock: e.target.checked }))}
+                            className="w-5 h-5 rounded border-heritage-dark/10 checked:bg-primary transition-all cursor-pointer"
+                          />
+                        </div>
+                        <span className="text-sm font-bold text-heritage-dark/60 group-hover:text-primary transition-colors">Visible in Catalog</span>
+                      </label>
+                    </div>
+                 </div>
+              </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Type
-                  </label>
-                  <select
-                    name="type"
-                    value={formData.discount.type}
-                    onChange={handleDiscountChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="percentage">Percentage</option>
-                    <option value="fixed">Fixed Amount</option>
-                  </select>
+              {/* Section: Discount */}
+              <div className="space-y-8">
+                <div className="flex items-center gap-3 label-text opacity-30">
+                   <ShieldCheck className="w-3.5 h-3.5" /> Discount Protocol
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 bg-heritage-bone/30 p-8 rounded-xl border border-heritage-dark/5">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-primary uppercase tracking-widest ml-1">Type</label>
+                    <select
+                      name="type"
+                      value={formData.discount.type}
+                      onChange={handleDiscountChange}
+                      className="w-full px-6 py-4 bg-white border border-heritage-dark/5 rounded-xl focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all text-sm font-medium cursor-pointer"
+                    >
+                      <option value="percentage">Percentage (%)</option>
+                      <option value="fixed">Fixed (₹)</option>
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-primary uppercase tracking-widest ml-1">Magitude</label>
+                    <input
+                      type="number"
+                      name="value"
+                      value={formData.discount.value}
+                      onChange={handleDiscountChange}
+                      placeholder="Leave empty for no discount"
+                      className="w-full px-6 py-4 bg-white border border-heritage-dark/5 rounded-xl focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all text-sm font-medium"
+                    />
+                  </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Discount Value
-                  </label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-heritage-dark/40 uppercase tracking-widest ml-1">Commencement</label>
+                    <input
+                      type="datetime-local"
+                      name="startDate"
+                      value={formData.discount.startDate}
+                      onChange={handleDiscountChange}
+                      className="w-full px-6 py-4 bg-heritage-bone/30 border border-heritage-dark/5 rounded-xl focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all text-sm font-medium"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-heritage-dark/40 uppercase tracking-widest ml-1">Conclusion</label>
+                    <input
+                      type="datetime-local"
+                      name="endDate"
+                      value={formData.discount.endDate}
+                      onChange={handleDiscountChange}
+                      className="w-full px-6 py-4 bg-heritage-bone/30 border border-heritage-dark/5 rounded-xl focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all text-sm font-medium"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Section: Media */}
+              <div className="space-y-8">
+                <div className="flex items-center gap-3 label-text opacity-30">
+                   <ImageIcon className="w-3.5 h-3.5" /> Heritage Visuals
+                </div>
+                
+                <div className="space-y-4">
+                  <label className="text-[10px] font-bold text-heritage-dark/40 uppercase tracking-widest ml-1">Visual Endpoints (Comma Separated)</label>
+                  <textarea
+                    name="images"
+                    value={formData.images}
+                    onChange={handleInputChange}
+                    rows={3}
+                    placeholder="https://example.com/art1.jpg, https://example.com/art2.jpg"
+                    className="w-full px-6 py-4 bg-heritage-bone/30 border border-heritage-dark/5 rounded-xl focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all text-sm font-medium"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-heritage-dark/40 uppercase tracking-widest ml-1">Lead Artisan Attribution</label>
                   <input
-                    type="number"
-                    name="value"
-                    value={formData.discount.value}
-                    onChange={handleDiscountChange}
-                    step="0.01"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Leave empty for no discount"
+                    type="text"
+                    name="artisanName"
+                    value={formData.artisanName}
+                    onChange={handleInputChange}
+                    placeholder="e.g. Master Artisan Devi"
+                    className="w-full px-6 py-4 bg-heritage-bone/30 border border-heritage-dark/5 rounded-xl focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all text-sm font-medium"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Start Date
-                  </label>
-                  <input
-                    type="datetime-local"
-                    name="startDate"
-                    value={formData.discount.startDate}
-                    onChange={handleDiscountChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    End Date
-                  </label>
-                  <input
-                    type="datetime-local"
-                    name="endDate"
-                    value={formData.discount.endDate}
-                    onChange={handleDiscountChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
+              {/* Actions */}
+              <div className="flex flex-col sm:flex-row gap-6 pt-10 border-t border-heritage-dark/5">
+                <Link
+                  href="/admin/products"
+                  className="flex-1 btn-outline py-5 rounded-xl text-center"
+                >
+                  Cancel Manifest
+                </Link>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="flex-[2] btn-primary py-5 rounded-xl flex items-center justify-center gap-4 group disabled:opacity-50"
+                >
+                  {loading ? (
+                    <LoadingSpinner className="w-5 h-5 border-white/30 border-t-white" />
+                  ) : (
+                    <>Establish Artifact <Plus className="w-4 h-4 transition-transform group-hover:scale-110" /></>
+                  )}
+                </button>
               </div>
-            </div>
-
-            {/* Media & Artisan */}
-            <div className="space-y-4 pt-6 border-t">
-              <h2 className="text-lg font-bold text-gray-900">Media & Artisan</h2>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Image URLs (comma-separated)
-                </label>
-                <textarea
-                  name="images"
-                  value={formData.images}
-                  onChange={handleInputChange}
-                  rows={3}
-                  placeholder="https://example.com/image1.jpg, https://example.com/image2.jpg"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Artisan Name (Optional)
-                </label>
-                <input
-                  type="text"
-                  name="artisanName"
-                  value={formData.artisanName}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-            </div>
-
-            {/* Submit */}
-            <div className="pt-6 border-t flex gap-4">
-              <button
-                type="submit"
-                disabled={loading}
-                className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-bold py-2 px-6 rounded-lg"
-              >
-                {loading ? 'Creating...' : 'Create Product'}
-              </button>
-
-              <Link
-                href="/admin/products"
-                className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-6 rounded-lg"
-              >
-                Cancel
-              </Link>
-            </div>
-          </form>
+            </form>
+          </div>
         </div>
       </div>
     </main>

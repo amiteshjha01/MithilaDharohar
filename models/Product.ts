@@ -17,6 +17,12 @@ export interface IProduct extends Document {
   origin: string;
   artisanName?: string;
   description: string;
+  variants?: {
+    name: string;
+    price: number;
+    stockQuantity: number;
+    image?: string;
+  }[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -76,6 +82,14 @@ const ProductSchema = new Schema<IProduct>(
       type: String,
       required: true,
     },
+    variants: [
+      {
+        name: { type: String, required: true },
+        price: { type: Number, required: true },
+        stockQuantity: { type: Number, default: 0 },
+        image: { type: String },
+      },
+    ],
   },
   {
     timestamps: true, // Automatically adds createdAt and updatedAt
