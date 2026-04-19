@@ -14,6 +14,22 @@ const EditProductPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
+  const [categories, setCategories] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res = await fetch('/api/categories');
+        const data = await res.json();
+        if (data.success) {
+          setCategories(data.data);
+        }
+      } catch (err) {
+        console.error('Failed to load lineages:', err);
+      }
+    };
+    fetchCategories();
+  }, []);
   const [adminKey, setAdminKey] = useState('');
 
   const [formData, setFormData] = useState({
@@ -203,10 +219,19 @@ const EditProductPage = () => {
                       onChange={handleInputChange}
                       className="w-full px-6 py-4 bg-heritage-bone/30 border border-heritage-dark/5 rounded-xl focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all text-sm font-medium cursor-pointer"
                     >
-                      <option value="food">Artisan Food</option>
-                      <option value="clothing">Heritage Clothing</option>
-                      <option value="craft">Madhubani Crafts</option>
-                      <option value="festive">Festival Sanctuary</option>
+                      {categories.map((cat) => (
+                        <option key={cat._id} value={cat.slug}>
+                          {cat.name}
+                        </option>
+                      ))}
+                      {categories.length === 0 && (
+                        <>
+                          <option value="food">Artisan Food</option>
+                          <option value="clothing">Heritage Clothing</option>
+                          <option value="craft">Madhubani Crafts</option>
+                          <option value="festive">Festival Sanctuary</option>
+                        </>
+                      )}
                     </select>
                   </div>
                 </div>
@@ -294,7 +319,7 @@ const EditProductPage = () => {
                           className="w-5 h-5 rounded border-heritage-dark/10 checked:bg-primary transition-all cursor-pointer"
                         />
                       </div>
-                      <span className="text-sm font-bold text-heritage-dark/60 group-hover:text-primary transition-colors">Visible in Sanctuary Catalog</span>
+                      <span className="text-sm font-bold text-heritage-dark/60 group-hover:text-primary transition-colors">Product In Stock</span>
                     </label>
                   </div>
                 </div>

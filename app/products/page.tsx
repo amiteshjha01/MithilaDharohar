@@ -15,6 +15,22 @@ function ProductsContent() {
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState('newest');
+  const [categories, setCategories] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res = await fetch('/api/categories');
+        const data = await res.json();
+        if (data.success) {
+          setCategories(data.data);
+        }
+      } catch (err) {
+        console.error('Failed to load lineages:', err);
+      }
+    };
+    fetchCategories();
+  }, []);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -59,7 +75,6 @@ function ProductsContent() {
     return sorted;
   }, [products, searchQuery, sortBy]);
 
-  const categories = ['food', 'clothing', 'craft', 'festive'];
 
   return (
     <main className="min-h-screen bg-secondary pb-32 pt-28">
@@ -108,11 +123,11 @@ function ProductsContent() {
              </Link>
              {categories.map(cat => (
                <Link 
-                 key={cat} 
-                 href={`/products?category=${cat}`}
-                 className={`text-[10px] font-bold uppercase tracking-widest pb-4 border-b-2 transition-all capitalize ${category === cat ? 'text-primary border-primary' : 'text-heritage-dark/40 border-transparent hover:text-heritage-dark'}`}
+                 key={cat._id} 
+                 href={`/products?category=${cat.slug}`}
+                 className={`text-[10px] font-bold uppercase tracking-widest pb-4 border-b-2 transition-all capitalize ${category === cat.slug ? 'text-primary border-primary' : 'text-heritage-dark/40 border-transparent hover:text-heritage-dark'}`}
                >
-                 {cat}
+                 {cat.name}
                </Link>
              ))}
            </div>

@@ -3,7 +3,7 @@ import mongoose, { Schema, Document } from 'mongoose';
 export interface IProduct extends Document {
   name: string;
   slug: string;
-  category: 'food' | 'clothing' | 'craft' | 'festive';
+  category: string;
   price: number;
   discount?: {
     type: 'percentage' | 'fixed';
@@ -36,14 +36,12 @@ const ProductSchema = new Schema<IProduct>(
     },
     slug: {
       type: String,
-      required: true,
       unique: true,
       lowercase: true,
       index: true,
     },
     category: {
       type: String,
-      enum: ['food', 'clothing', 'craft', 'festive'],
       required: true,
     },
     price: {
@@ -97,6 +95,11 @@ const ProductSchema = new Schema<IProduct>(
 );
 
 // Timestamps: true handled by schema options
+
+// Force re-compilation in development to resolve stale schema errors (like old enums)
+if (process.env.NODE_ENV === 'development') {
+  delete mongoose.models.Product;
+}
 
 export default mongoose.models.Product ||
   mongoose.model<IProduct>('Product', ProductSchema);

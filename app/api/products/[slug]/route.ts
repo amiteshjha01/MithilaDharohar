@@ -71,10 +71,11 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const { name, price, discount, images, inStock, stockQuantity, artisanName, description } = body;
+    const { name, category, price, discount, images, inStock, stockQuantity, artisanName, description } = body;
 
     // Update fields
     if (name !== undefined) product.name = name;
+    if (category !== undefined) product.category = category;
     if (price !== undefined) product.price = price;
     if (discount !== undefined) product.discount = discount;
     if (images !== undefined) product.images = images;
@@ -82,6 +83,12 @@ export async function PUT(
     if (stockQuantity !== undefined) product.stockQuantity = stockQuantity;
     if (artisanName !== undefined) product.artisanName = artisanName;
     if (description !== undefined) product.description = description;
+
+    // Explicitly regenerate slug if name changed
+    if (name && name !== product.name) {
+      const { generateUniqueSlug } = await import('@/lib/slug-utils');
+      product.slug = await generateUniqueSlug(Product, name, product._id);
+    }
 
     await product.save();
 
@@ -94,10 +101,19 @@ export async function PUT(
       success: true,
       data: product,
     });
-  } catch (error) {
+  } catch (error: any) {
     log.error('Failed to update product', error);
+
+    // Handle duplicate key error (MongoDB error 11000)
+    if (error.code === 11000) {
+      return NextResponse.json(
+        { success: false, error: 'A product with this name or slug already exists' },
+        { status: 400 }
+      );
+    }
+
     return NextResponse.json(
-      { success: false, error: 'Failed to update product' },
+      { success: false, error: error.message || 'Failed to update product' },
       { status: 500 }
     );
   }

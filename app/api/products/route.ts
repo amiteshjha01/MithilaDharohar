@@ -2,6 +2,7 @@ import { connectDB } from '@/lib/db';
 import Product from '@/models/Product';
 import { NextRequest, NextResponse } from 'next/server';
 import { log } from '@/lib/analytics';
+import { generateUniqueSlug } from '@/lib/slug-utils';
 
 /**
  * GET /api/products
@@ -60,7 +61,6 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const {
       name,
-      slug: providedSlug,
       category,
       price,
       discount,
@@ -79,10 +79,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate slug if not provided
-    const { generateSlug, ensureUniqueSlug } = await import('@/lib/helpers.server');
-    let slug = providedSlug || generateSlug(name);
-    slug = await ensureUniqueSlug(slug);
+    // Always regenerate unique slug from name
+    const slug = await generateUniqueSlug(Product, name);
 
     const product = await Product.create({
       name,
@@ -108,10 +106,19 @@ export async function POST(request: NextRequest) {
       { success: true, data: product },
       { status: 201 }
     );
-  } catch (error) {
+  } catch (error: any) {
     log.error('Failed to create product', error);
+
+    // Handle duplicate key error (MongoDB error 11000)
+    if (error.code === 11000) {
+      return NextResponse.json(
+        { success: false, error: 'A product with this name or slug already exists' },
+        { status: 400 }
+      );
+    }
+
     return NextResponse.json(
-      { success: false, error: 'Failed to create product' },
+      { success: false, error: error.message || 'Failed to create product' },
       { status: 500 }
     );
   }

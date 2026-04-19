@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Save, Plus, X, Image as ImageIcon, Info, Tag, IndianRupee, Package, ShieldCheck, AlertCircle } from 'lucide-react';
@@ -10,6 +10,25 @@ export default function CreateProductPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [categories, setCategories] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res = await fetch('/api/categories');
+        const data = await res.json();
+        if (data.success) {
+          setCategories(data.data);
+          if (data.data.length > 0 && !formData.category) {
+            setFormData(prev => ({ ...prev, category: data.data[0].slug }));
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load lineages:', err);
+      }
+    };
+    fetchCategories();
+  }, []);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -182,10 +201,12 @@ export default function CreateProductPage() {
                       onChange={handleInputChange}
                       className="w-full px-6 py-4 bg-heritage-bone/30 border border-heritage-dark/5 rounded-xl focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all text-sm font-medium cursor-pointer"
                     >
-                      <option value="food">Artisan Food</option>
-                      <option value="clothing">Heritage Clothing</option>
-                      <option value="craft">Madhubani Crafts</option>
-                      <option value="festive">Festival Sanctuary</option>
+                      {categories.map((cat) => (
+                        <option key={cat._id} value={cat.slug}>
+                          {cat.name}
+                        </option>
+                      ))}
+                      {categories.length === 0 && <option value="food">Artisan Food</option>}
                     </select>
                   </div>
                 </div>
@@ -248,7 +269,7 @@ export default function CreateProductPage() {
                             className="w-5 h-5 rounded border-heritage-dark/10 checked:bg-primary transition-all cursor-pointer"
                           />
                         </div>
-                        <span className="text-sm font-bold text-heritage-dark/60 group-hover:text-primary transition-colors">Visible in Catalog</span>
+                        <span className="text-sm font-bold text-heritage-dark/60 group-hover:text-primary transition-colors">Product In Stock</span>
                       </label>
                     </div>
                  </div>

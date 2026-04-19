@@ -28,7 +28,8 @@ const heritageHighlights = [
     slug: 'mithila-thekua',
     category: 'Food',
     description: 'Golden snacks of ceremony, sun-baked and heart-made.',
-    featured: true
+    featured: true,
+    inStock: true
   },
   {
     _id: '2',
@@ -38,32 +39,37 @@ const heritageHighlights = [
     slug: 'graded-makhana',
     category: 'Food',
     description: 'Luxury fox nuts hand-roasted with secret Mithila spices.',
-    featured: true
+    featured: true,
+    inStock: true
   },
   {
     _id: '3',
     name: 'Madhubani Silk Dupatta',
-    price: 2499,
+    price: 1499,
     images: ['/dupatta_unique.png'],
     slug: 'madhubani-dupatta',
     category: 'Clothing',
     description: 'Hand-painted silk telling stories of ancient lore.',
-    featured: true
+    featured: true,
+    inStock: true
   },
   {
     _id: '4',
     name: 'Ceremonial Mithila Paag',
-    price: 799,
+    price: 199,
     images: ['/Mithila-Paag.jpg'],
     slug: 'mithila-paag',
     category: 'Culture',
     description: 'The ceremonial crown of honor and respect.',
-    featured: true
+    featured: true,
+    inStock: true
   }
 ];
 
 export default function HomePage() {
   const [products, setProducts] = useState(heritageHighlights);
+  const [dynamicCategories, setDynamicCategories] = useState<any[]>([]);
+  const [loadingCats, setLoadingCats] = useState(true);
 
   useEffect(() => {
     fetch('/api/products?category=all')
@@ -75,18 +81,22 @@ export default function HomePage() {
         }
       })
       .catch(err => console.error("Heritage data fetch failed", err));
+
+    fetch('/api/categories')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          setDynamicCategories(data.data.slice(0, 4));
+        }
+      })
+      .catch(err => console.error("Categories fetch failed", err))
+      .finally(() => setLoadingCats(false));
   }, []);
 
-  const categories = [
-    { name: 'Heritage Food', slug: 'food', icon: Utensils, desc: 'Pickles & Snacks' },
-    { name: 'Handlooms', slug: 'clothing', icon: Shirt, desc: 'Silk & Cottons' },
-    { name: 'Mithila Art', slug: 'craft', icon: Palette, desc: 'Madhubani Works' },
-    { name: 'Festive', slug: 'festive', icon: Sparkles, desc: 'Curated Selection' },
-  ];
 
   return (
     <main className="bg-secondary min-h-screen">
-      
+
       {/* 01. Elegant Hero Sanctuary */}
       <section className="relative pt-32 pb-20 md:pt-48 md:pb-32 overflow-hidden bg-heritage-bone">
         <div className="container-sanctuary relative z-10 grid grid-cols-1 lg:grid-cols-12 items-center gap-12 md:gap-20">
@@ -102,10 +112,10 @@ export default function HomePage() {
             <p className="body-text text-lg md:text-xl max-w-xl">
               Preserving Bihar&apos;s 2,500-year-old traditions through artisanal foods, hand-painted silks, and sacred crafts. Crafted by women, delivered to your doorstep.
             </p>
-            
+
             <div className="flex flex-col sm:flex-row items-center gap-6 pt-4">
-              <Link 
-                href="/products" 
+              <Link
+                href="/products"
                 className="btn-primary flex items-center justify-center gap-3 group"
               >
                 Explore Collection
@@ -136,7 +146,7 @@ export default function HomePage() {
             </div>
           </div>
         </div>
-        
+
         {/* Artistic Gradient */}
         <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-primary/5 to-transparent pointer-events-none"></div>
       </section>
@@ -153,21 +163,39 @@ export default function HomePage() {
           </div>
 
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
-            {categories.map((cat, i) => (
+            {(dynamicCategories.length > 0 ? dynamicCategories : []).map((cat, i) => (
               <Link
-                key={i}
+                key={cat._id || i}
                 href={`/products?category=${cat.slug}`}
-                className="group p-8 rounded-xl bg-heritage-bone/30 border border-heritage-dark/5 hover:bg-white hover:border-primary/20 transition-all text-center space-y-4"
+                className="group relative h-64 md:h-80 rounded-2xl overflow-hidden border border-heritage-dark/5 hover:border-primary/20 transition-all shadow-sm"
               >
-                <div className="w-16 h-16 mx-auto rounded-full bg-white flex items-center justify-center text-primary border border-heritage-dark/5 group-hover:bg-primary group-hover:text-white transition-all shadow-sm">
-                  <cat.icon className="w-6 h-6" />
-                </div>
-                <div className="space-y-1">
-                  <h3 className="text-sm font-bold uppercase tracking-widest text-heritage-dark">{cat.name}</h3>
-                  <p className="text-[10px] text-primary/60 font-medium uppercase tracking-widest">{cat.desc}</p>
+                {cat.image ? (
+                  <Image
+                    src={cat.image}
+                    alt={cat.name}
+                    fill
+                    className="object-cover transition-transform duration-700 group-hover:scale-110"
+                  />
+                ) : (
+                  <div className="absolute inset-0 bg-heritage-bone flex items-center justify-center">
+                    <Sparkles className="w-10 h-10 text-primary opacity-20" />
+                  </div>
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-heritage-dark/90 via-heritage-dark/20 to-transparent"></div>
+                <div className="absolute bottom-6 left-6 right-6 text-left">
+                  <h3 className="text-lg font-serif font-bold text-white mb-1">{cat.name}</h3>
+                  <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all translate-y-2 group-hover:translate-y-0">
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-primary">Discover Archive</span>
+                    <ArrowRight className="w-3 h-3 text-primary" />
+                  </div>
                 </div>
               </Link>
             ))}
+            {!loadingCats && dynamicCategories.length === 0 && (
+              [1, 2, 3, 4].map((n) => (
+                <div key={n} className="h-64 md:h-80 rounded-2xl bg-heritage-bone/50 animate-pulse"></div>
+              ))
+            )}
           </div>
         </div>
       </section>
@@ -177,12 +205,12 @@ export default function HomePage() {
         <div className="container-sanctuary">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <div className="relative rounded-2xl overflow-hidden aspect-[4/5] border border-heritage-dark/5 shadow-sm">
-               <Image
-                 src="/thekua_unique.png"
-                 alt="Artisan Story"
-                 fill
-                 className="object-cover"
-               />
+              <Image
+                src="/thekua_unique.png"
+                alt="Artisan Story"
+                fill
+                className="object-cover"
+              />
             </div>
             <div className="space-y-10 lg:pl-10">
               <div className="space-y-4">
